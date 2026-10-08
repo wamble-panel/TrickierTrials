@@ -1,107 +1,97 @@
 package de.t14d3.trickiertrials;
 
-import org.bukkit.Material;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
+import de.t14d3.trickiertrials.chamber.ChamberProtectionListener;
+import de.t14d3.trickiertrials.chamber.VaultListener;
+import de.t14d3.trickiertrials.command.TrialsCommand;
+import de.t14d3.trickiertrials.mob.AffixListener;
+import de.t14d3.trickiertrials.session.SessionManager;
+import de.t14d3.trickiertrials.stats.StatsStore;
+import de.t14d3.trickiertrials.util.Fx;
+import de.t14d3.trickiertrials.util.Text;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.File;
 
-public final class TrickierTrials extends JavaPlugin implements CommandExecutor {
+public final class TrickierTrials extends JavaPlugin {
 
-    private List<Material> trialChamberMaterials;
-
-    private boolean decayPlacedBlocks;
-    private boolean regenerateBrokenBlocks;
-    private boolean strengthenTrialMobs;
-    private boolean glowingEffect;
-    private boolean secret;
-    private String secretName;
-
-    private long trialVaultResetTime;
+    private Settings settings;
+    private StatsStore stats;
+    private SessionManager sessions;
+    private AffixListener affixes;
+    private ChamberProtectionListener protection;
 
     @Override
     public void onEnable() {
-        // Load configuration
-        saveDefaultConfig(); // Creates the config file with default values if it doesn't exist
-        loadTrialChamberMaterials(); // Load trial chamber materials from config
-        loadConfigurationOptions(); // Load decay and regeneration settings
+        saveDefaultConfig();
+        migrateConfig();
+        reload();
 
-        // Register event listeners
-        this.getServer().getPluginManager().registerEvents(new TrialSpawnerListener(this, strengthenTrialMobs, glowingEffect, secret, secretName), this);
-        this.getServer().getPluginManager().registerEvents(new TrialChamberProtector(this, getTrialChamberMaterials(), decayPlacedBlocks, regenerateBrokenBlocks), this);
-        this.getServer().getPluginManager().registerEvents(new TrialDeathListener(), this);
-        this.getServer().getPluginManager().registerEvents(new TrialVaultRefresher(this, trialVaultResetTime), this);
+        stats = new StatsStore(this);
+        sessions = new SessionManager(this);
+        affixes = new AffixListener(this);
+        protection = new ChamberProtectionListener(this);
 
-        // Register command executor
-        this.getCommand("trickiertrials").setExecutor(this);
+        var pm = getServer().getPluginManager();
+        pm.registerEvents(protection, this);
+        pm.registerEvents(new VaultListener(this), this);
+        pm.registerEvents(affixes, this);
+        pm.registerEvents(sessions, this);
+        sessions.startTicking();
+
+        PluginCommand command = getCommand("trickiertrials");
+        if (command != null) {
+            TrialsCommand executor = new TrialsCommand(this);
+            command.setExecutor(executor);
+            command.setTabCompleter(executor);
+        }
     }
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        if (sessions != null) sessions.shutdown();
+        if (protection != null) protection.restoreAll();
+        if (stats != null) stats.saveNow();
     }
 
-    private void loadTrialChamberMaterials() {
-        FileConfiguration config = getConfig();
-        List<String> blockNames = config.getStringList("blocks-to-protect");
-        trialChamberMaterials = new ArrayList<>();
-
-        for (String name : blockNames) {
-            try {
-                Material material = Material.valueOf(name);
-                trialChamberMaterials.add(material);
-            } catch (IllegalArgumentException e) {
-                getLogger().warning("Invalid material in config: " + name);
-            }
-        }
+    public void reload() {
+        reloadConfig();
+        settings = new Settings(getConfig(), getLogger());
+        Text.load(getConfig());
+        Fx.setSounds(settings.sounds);
     }
 
-    private void loadConfigurationOptions() {
-        FileConfiguration config = getConfig();
-        decayPlacedBlocks = config.getBoolean("decay-placed-blocks", true);
-        regenerateBrokenBlocks = config.getBoolean("regenerate-broken-blocks", true);
-        strengthenTrialMobs = config.getBoolean("strengthen-trial-mobs", true);
-        trialVaultResetTime = config.getLong("trial-vault-reset-time", 86400000L);
-        glowingEffect = config.getBoolean("modules.glowing-effect", true);
-        secret = config.getBoolean("easter-egg", false);
-        secretName = config.getString("easter-egg-name", "Klein Tiade");
+    /** Upgrades a v1 config: keeps the old values but adopts the new, documented layout. */
+    private void migrateConfig() {
+        File file = new File(getDataFolder(), "config.yml");
+        YamlConfiguration old = YamlConfiguration.loadConfiguration(file);
+        if (!Settings.migrate(old)) return;
 
-        // Config migrator
-        if (config.get("decay-delay") == null) {
-            config.set("decay-delay", "10 #Decay delay in seconds");
+        File backup = new File(getDataFolder(), "config-v1.yml");
+        if (!file.renameTo(backup)) getLogger().warning("Could not back up the old config.yml");
+        saveResource("config.yml", true);
+        reloadConfig();
+        for (String key : old.getKeys(true)) {
+            if (!old.isConfigurationSection(key)) getConfig().set(key, old.get(key));
         }
-        if (config.get("regenerate-delay") == null) {
-            config.set("regenerate-delay", "10 #Regeneration delay in seconds, plus a random delay of up to 100 ticks");
-        }
-        if (config.get("mining-fatigue-level") == null) {
-            config.set("mining-fatigue-level", 2);
-        }
+        saveConfig();
+        getLogger().info("Migrated config.yml to version 2 (old file saved as config-v1.yml).");
     }
 
-    public List<Material> getTrialChamberMaterials() {
-        return trialChamberMaterials;
+    public Settings settings() {
+        return settings;
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (command.getName().equalsIgnoreCase("trickiertrials")) {
-            if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
-                // Reload the configuration
-                reloadConfig();
-                loadTrialChamberMaterials(); // Reload trial chamber materials
-                loadConfigurationOptions(); // Reload other options
-                sender.sendMessage("Trickier Trials configuration reloaded successfully.");
-                return true;
-            } else {
-                // Handle other command logic here (if applicable)
-                sender.sendMessage("Usage: /trickiertrials reload");
-                return true;
-            }
-        }
-        return false;
+    public StatsStore stats() {
+        return stats;
+    }
+
+    public SessionManager sessions() {
+        return sessions;
+    }
+
+    public AffixListener affixes() {
+        return affixes;
     }
 }

@@ -2,7 +2,14 @@ name: TrickierTrials
 version: '${version}'
 main: de.t14d3.trickiertrials.TrickierTrials
 author: t14d3
-api-version: '1.21'
+description: Waves, bosses, elite mobs, combos and leaderboards for Trial Chambers.
+api-version: '26.2'
 commands:
   trickiertrials:
-    description: Main command for Trickier Trials
+    description: Trial encounters, stats and leaderboards
+    usage: /<command> [info|stats|top|boss|end|reload]
+    aliases: [trials, tt]
+permissions:
+  trickiertrials.admin:
+    description: Reload the config, summon bosses and end encounters
+    default: op

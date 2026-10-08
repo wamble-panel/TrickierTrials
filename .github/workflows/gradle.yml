@@ -17,7 +17,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '21'  # Specify your desired Java version
+          java-version: '25'
           distribution: 'temurin'
 
       - name: Build with Gradle

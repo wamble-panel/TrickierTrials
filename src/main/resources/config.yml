@@ -1,42 +1,271 @@
-blocks-to-protect:
-  - COPPER_BLOCK
-  - WAXED_COPPER_BLOCK
-  - WEATHERED_COPPER
-  - WAXED_WEATHERED_COPPER
-  - EXPOSED_COPPER
-  - WAXED_EXPOSED_COPPER
-  - OXIDIZED_COPPER
-  - WAXED_OXIDIZED_COPPER
-  - CUT_COPPER
-  - WAXED_CUT_COPPER
-  - OXIDIZED_CUT_COPPER
-  - WAXED_OXIDIZED_CUT_COPPER
-  - WAXED_CHISELED_COPPER
-  - WAXED_OXIDIZED_CHISELED_COPPER
-  - POLISHED_TUFF
-  - TUFF_BRICKS
-  - CHISELED_TUFF_BRICKS
-  - CHISELED_TUFF
-  - WAXED_CUT_COPPER_STAIRS
-  - WAXED_OXIDIZED_CUT_COPPER_STAIRS
-  - WAXED_OXIDIZED_CUT_COPPER_SLAB
-  - WAXED_CUT_COPPER_SLAB
-  - WAXED_COPPER_GRATE
-  - WAXED_OXIDIZED_COPPER_GRATE
-  - LADDER
-  - LIGHT_GRAY_STAINED_GLASS
-  - WAXED_COPPER_BULB
-  - WAXED_EXPOSED_COPPER_BULB
-  - WAXED_WEATHERED_COPPER_BULB
-  - WAXED_OXIDIZED_COPPER_BULB
+# ╭──────────────────────────────────────────────────────────────╮
+# │                 TrickierTrials  ·  Paper 26.2                 │
+# │   Waves, bosses, elites, combos and leaderboards for every   │
+# │                    Trial Chamber you own.                    │
+# ╰──────────────────────────────────────────────────────────────╯
+# Messages use MiniMessage (https://docs.advntr.dev/minimessage/format.html).
+# Every palette colour below can be used as a tag (<copper>text</copper>) and inside
+# gradients (<gradient:copper:gold>text</gradient>).
 
-glowing-effect: true
-mining-fatigue-level: 2 # Set to 0 to disable
+config-version: 2
 
-decay-placed-blocks: true
-decay-delay: 10 # Decay delay in seconds
-regenerate-broken-blocks: true
-regenerate-delay: 10 # Regeneration delay in seconds, plus a random delay of up to 100 ticks
-strengthen-trial-mobs: true
+palette:
+  copper: "#E8875B"   # warm copper - main accent
+  gold: "#F7C873"     # rewards / highlights
+  teal: "#5CC8B5"     # oxidised copper - waves
+  sky: "#9AD8FF"      # breeze / wind
+  ominous: "#A974FF"  # ominous trials & bosses
+  danger: "#FF5E6C"   # damage, deaths, enrage
+  success: "#7EE081"  # victories
+  muted: "#9A9AA6"    # tuff grey - secondary text
+  light: "#F3EEE7"    # main text
 
-trial-vault-reset-time: 86400000 # Time in Milliseconds, set to -1 to disable. Default is 24 hours (1000 * 60 * 60 * 24 = 86400000)
+# ──────────────────────────── Chamber protection ────────────────────────────
+chamber-protection:
+  enabled: true
+  # Broken chamber blocks drop nothing and grow back.
+  regenerate-broken-blocks: true
+  regenerate-delay: 10          # seconds (+ up to 5 random seconds)
+  # Blocks placed by players inside a chamber vanish again.
+  decay-placed-blocks: true
+  decay-delay: 10               # seconds
+  mining-fatigue-level: 2       # 0 disables mining fatigue while breaking chamber blocks
+  blocks-to-protect:
+    - COPPER_BLOCK
+    - WAXED_COPPER_BLOCK
+    - WEATHERED_COPPER
+    - WAXED_WEATHERED_COPPER
+    - EXPOSED_COPPER
+    - WAXED_EXPOSED_COPPER
+    - OXIDIZED_COPPER
+    - WAXED_OXIDIZED_COPPER
+    - CUT_COPPER
+    - WAXED_CUT_COPPER
+    - OXIDIZED_CUT_COPPER
+    - WAXED_OXIDIZED_CUT_COPPER
+    - WAXED_CHISELED_COPPER
+    - WAXED_OXIDIZED_CHISELED_COPPER
+    - POLISHED_TUFF
+    - TUFF_BRICKS
+    - CHISELED_TUFF_BRICKS
+    - CHISELED_TUFF
+    - WAXED_CUT_COPPER_STAIRS
+    - WAXED_OXIDIZED_CUT_COPPER_STAIRS
+    - WAXED_OXIDIZED_CUT_COPPER_SLAB
+    - WAXED_CUT_COPPER_SLAB
+    - WAXED_COPPER_GRATE
+    - WAXED_OXIDIZED_COPPER_GRATE
+    - LADDER
+    - LIGHT_GRAY_STAINED_GLASS
+    - WAXED_COPPER_BULB
+    - WAXED_EXPOSED_COPPER_BULB
+    - WAXED_WEATHERED_COPPER_BULB
+    - WAXED_OXIDIZED_COPPER_BULB
+
+# ──────────────────────────────── Trial mobs ────────────────────────────────
+trial-mobs:
+  strengthen: true
+  glowing: true
+  # Mobs read the average gear of nearby players and pick a tier (armor, weapons, stats).
+  gear-scaling: true
+  # Extra health / damage for every player beyond the first in the encounter.
+  per-extra-player:
+    health: 0.15
+    damage: 0.05
+  # Trial mobs only drop these items (prevents armor / weapon farming).
+  restrict-drops: true
+  allowed-drops: [BREEZE_ROD, ROTTEN_FLESH, BONE, ARROW, STRING, SPIDER_EYE, SLIME_BALL, TIPPED_ARROW]
+  easter-egg: false
+  easter-egg-name: "Klein Tiade"
+
+# ──────────────────────────────── Elite mobs ────────────────────────────────
+# Diablo-style affixes: Swift, Brutal, Vampiric, Molten, Frostbite, Venomous,
+# Volatile, Shielded, Galeborn, Splitting, Undying.
+elites:
+  enabled: true
+  base-chance: 0.08
+  chance-per-wave: 0.02
+  max-chance: 0.45
+  ominous-bonus: 0.10
+  health-bonus: 0.40
+  bonus-exp: 15
+  key-drop-chance: 0.04        # chance for an elite to drop a Trial Key
+  disabled-affixes: []
+
+# ────────────────────────────────── Waves ───────────────────────────────────
+# An encounter starts the moment a trial spawner spawns its first mob. Kill trial mobs to fill
+# the wave bar. If the chamber runs dry, it sends reinforcements so the wave can always finish.
+waves:
+  kills-base: 8
+  kills-per-extra-player: 4
+  kills-per-wave: 2
+  health-per-wave: 0.08        # +8% mob health per wave
+  damage-per-wave: 0.05        # +5% mob damage per wave
+  boss-every: 3                # every Nth wave is a boss wave
+  final-wave: 9                # beating this wave conquers the chamber. 0 = endless
+  intermission: 6              # seconds between waves
+  wave-clear-heal: 6.0         # health restored to every player when a wave is cleared
+  reinforcements: true
+  reinforcement-delay: 5       # seconds without living mobs before reinforcements arrive
+
+# ────────────────────────────────── Bosses ──────────────────────────────────
+bosses:
+  enabled: true
+  health-per-extra-player: 0.5   # +50% boss health per extra player
+  ominous-multiplier: 1.4        # stat multiplier in ominous chambers
+  final-multiplier: 1.5          # stat multiplier for the final boss
+  enrage-threshold: 0.35         # bosses enrage below this health fraction
+  experience: 120
+  types:
+    tempest:
+      enabled: true
+      name: "<gradient:sky:teal><bold>Tempest, the Howling Gale</bold></gradient>"
+      health: 260
+      damage: 1.0
+    bog-sovereign:
+      enabled: true
+      name: "<gradient:success:teal><bold>The Bog Sovereign</bold></gradient>"
+      health: 240
+      damage: 1.0
+    juggernaut:
+      enabled: true
+      name: "<gradient:copper:danger><bold>Copperclad Juggernaut</bold></gradient>"
+      health: 380
+      damage: 1.0
+    brood-mother:
+      enabled: true
+      name: "<gradient:danger:ominous><bold>Vexa, the Brood Mother</bold></gradient>"
+      health: 280
+      damage: 1.0
+    rimeborn:
+      enabled: true
+      name: "<gradient:light:sky><bold>The Rimeborn Marksman</bold></gradient>"
+      health: 230
+      damage: 1.0
+  # Dropped when a boss dies. Format: "MATERIAL amount chance". Amounts scale with player count.
+  rewards:
+    - "TRIAL_KEY 1 1.0"
+    - "OMINOUS_TRIAL_KEY 1 0.25"
+    - "EMERALD 6 1.0"
+    - "DIAMOND 2 0.5"
+    - "GOLDEN_APPLE 1 0.6"
+    - "WIND_CHARGE 8 0.7"
+    - "ENCHANTED_GOLDEN_APPLE 1 0.04"
+    - "HEAVY_CORE 1 0.02"
+  # Extra loot when the final wave is beaten.
+  victory-rewards:
+    - "OMINOUS_TRIAL_KEY 1 1.0"
+    - "DIAMOND 4 1.0"
+    - "EXPERIENCE_BOTTLE 16 1.0"
+    - "TOTEM_OF_UNDYING 1 0.25"
+
+# ───────────────────────────── Score & combos ───────────────────────────────
+score:
+  kill: 10
+  elite: 40
+  boss: 300
+  wave-clear: 100
+  victory: 1000
+  death-penalty: 150
+combo:
+  window: 6                    # seconds between kills to keep the combo alive
+  multiplier-per-kill: 0.1
+  max-multiplier: 3.0
+
+# ───────────────────────────────── Encounters ───────────────────────────────
+session:
+  enabled: true
+  # Used when a trial spawner is NOT inside a generated trial chamber (custom builds).
+  fallback-radius: 40
+  idle-timeout: 30             # seconds without players before the encounter is abandoned
+  victory-cooldown: 600        # seconds before a conquered chamber can start a new encounter
+  bossbar: true
+  actionbar: true
+  titles: true
+  sounds: true
+  broadcast-victories: true    # announce conquered chambers to the whole server
+
+# ──────────────────────────────── Trial vaults ──────────────────────────────
+vault-reset:
+  enabled: true
+  cooldown: 86400              # seconds until a player can open the same vault again. -1 = never
+
+# ───────────────────────────────── Messages ─────────────────────────────────
+messages:
+  prefix: "<gradient:copper:gold><bold>TRIALS</bold></gradient> <dark_gray>»</dark_gray> "
+  reload: "<success>Configuration reloaded.</success>"
+  no-permission: "<danger>You don't have permission to do that.</danger>"
+  player-only: "<danger>Only players can use this.</danger>"
+  not-in-session: "<muted>You are not inside an active trial encounter.</muted>"
+  unknown-player: "<danger>No stats found for <light><name></light>.</danger>"
+  unknown-boss: "<danger>Unknown boss. Options: <light><options></light></danger>"
+  session-ended-admin: "<muted>Encounter ended.</muted>"
+  help:
+    - "<gradient:copper:gold><bold>TrickierTrials</bold></gradient> <muted>v<version></muted>"
+    - "<copper>/trials info</copper> <muted>- your current encounter</muted>"
+    - "<copper>/trials stats [player]</copper> <muted>- personal records</muted>"
+    - "<copper>/trials top [score|wave|kills|bosses|victories]</copper> <muted>- leaderboard</muted>"
+    - "<copper>/trials boss <type></copper> <muted>- summon a boss (admin)</muted>"
+    - "<copper>/trials end</copper> <muted>- end your encounter (admin)</muted>"
+    - "<copper>/trials reload</copper> <muted>- reload the config (admin)</muted>"
+
+  # Encounter flow
+  session-start-title: "<gradient:copper:gold><bold>TRIAL BEGINS</bold></gradient>"
+  session-start-subtitle: "<muted>Survive <light><waves></light> waves · <light><players></light> challenger(s)</muted>"
+  session-start-title-ominous: "<gradient:ominous:danger><bold>OMINOUS TRIAL</bold></gradient>"
+  session-join: "<light><player></light> <muted>entered the trial on wave</muted> <teal><wave></teal>"
+  wave-start-title: "<gradient:teal:sky><bold>WAVE <wave></bold></gradient>"
+  wave-start-subtitle: "<muted>Slay <light><target></light> foes</muted>"
+  wave-clear-title: "<success><bold>WAVE CLEARED</bold></success>"
+  wave-clear-subtitle: "<muted>+<gold><points></gold> points · next wave in <light><seconds>s</light></muted>"
+  boss-incoming-title: "<gradient:ominous:danger><bold>⚠ BOSS WAVE ⚠</bold></gradient>"
+  boss-incoming-subtitle: "<boss>"
+  boss-enrage: "<danger><bold>⚡</bold></danger> <boss> <danger>is enraged!</danger>"
+  boss-defeated-title: "<gradient:gold:copper><bold>BOSS DEFEATED</bold></gradient>"
+  boss-defeated-subtitle: "<boss> <muted>has fallen</muted>"
+  boss-defeated-chat: "<gold>✦</gold> <boss> <muted>was slain by</muted> <light><player></light> <muted>in</muted> <light><time></light>"
+  reinforcements: "<ominous>The chamber stirs...</ominous> <muted>reinforcements arrive!</muted>"
+  player-fallen: "<danger>☠</danger> <light><player></light> <muted>has fallen on wave</muted> <teal><wave></teal> <danger>(-<penalty>)</danger>"
+  victory-title: "<gradient:gold:copper:gold><bold>CHAMBER CONQUERED</bold></gradient>"
+  victory-subtitle: "<muted>All <light><waves></light> waves survived in <light><time></light></muted>"
+  victory-broadcast: "<gold>✦</gold> <light><players></light> <muted>conquered a trial chamber in</muted> <light><time></light> <muted>with</muted> <gold><score></gold> <muted>points!</muted>"
+  abandoned: "<muted>The trial falls silent... reached wave</muted> <teal><wave></teal>"
+  elite-slain: "<gold>✦</gold> <muted>Elite slain:</muted> <name> <muted>+<points></muted>"
+  combo-milestone: "<gradient:gold:copper><bold><combo>x COMBO!</bold></gradient>"
+  new-record: "<gradient:gold:copper><bold>NEW PERSONAL BEST!</bold></gradient> <muted><what></muted>"
+
+  # Bars
+  bossbar-wave: "<gradient:teal:sky><bold>WAVE <wave></bold></gradient><muted><final></muted> <dark_gray>│</dark_gray> <light><kills></light><muted>/<target> slain</muted>"
+  bossbar-intermission: "<success><bold>WAVE CLEARED</bold></success> <dark_gray>│</dark_gray> <muted>next wave in</muted> <light><seconds>s</light>"
+  bossbar-boss-wave: "<gradient:ominous:danger><bold>BOSS WAVE <wave></bold></gradient> <dark_gray>│</dark_gray> <muted>defeat the boss</muted>"
+  bossbar-boss: "<boss> <dark_gray>│</dark_gray> <danger>❤</danger> <light><health></light><muted>/<max></muted><enraged>"
+  bossbar-enraged: " <danger><bold>ENRAGED</bold></danger>"
+  actionbar: "<teal>⚔ <wave></teal> <dark_gray>│</dark_gray> <gold>✦ <score></gold> <dark_gray>│</dark_gray> <combo> <dark_gray>│</dark_gray> <muted>⏳ <time></muted>"
+  actionbar-combo: "<gradient:gold:copper><bold><combo>x</bold></gradient> <muted>combo</muted> <bar>"
+  actionbar-no-combo: "<muted>no combo</muted>"
+
+  # Summary (sent when an encounter ends)
+  summary:
+    - "<dark_gray><strikethrough>                                                  </strikethrough></dark_gray>"
+    - " <result>"
+    - " <muted>Wave reached</muted> <teal><wave></teal> <dark_gray>·</dark_gray> <muted>Time</muted> <light><time></light> <dark_gray>·</dark_gray> <muted>Team score</muted> <gold><team_score></gold>"
+    - " <muted>Your score</muted> <gold><score></gold> <dark_gray>·</dark_gray> <muted>Kills</muted> <light><kills></light> <dark_gray>·</dark_gray> <muted>Elites</muted> <light><elites></light> <dark_gray>·</dark_gray> <muted>Bosses</muted> <light><bosses></light>"
+    - " <muted>Best combo</muted> <copper><best_combo>x</copper> <dark_gray>·</dark_gray> <muted>Deaths</muted> <danger><deaths></danger> <dark_gray>·</dark_gray> <muted>MVP</muted> <gold><mvp></gold>"
+    - "<dark_gray><strikethrough>                                                  </strikethrough></dark_gray>"
+  summary-victory: "<gradient:gold:copper><bold>✦ CHAMBER CONQUERED ✦</bold></gradient>"
+  summary-abandoned: "<gradient:muted:light><bold>TRIAL ENDED</bold></gradient>"
+
+  # Stats & leaderboard
+  stats:
+    - "<gradient:copper:gold><bold><name></bold></gradient> <muted>· trial records</muted>"
+    - " <muted>Best score</muted> <gold><best_score></gold> <dark_gray>·</dark_gray> <muted>Best wave</muted> <teal><best_wave></teal>"
+    - " <muted>Kills</muted> <light><kills></light> <dark_gray>·</dark_gray> <muted>Elites</muted> <light><elites></light> <dark_gray>·</dark_gray> <muted>Bosses</muted> <light><bosses></light>"
+    - " <muted>Conquered</muted> <success><victories></success><muted>/<runs> runs</muted> <dark_gray>·</dark_gray> <muted>Best combo</muted> <copper><best_combo>x</copper>"
+  top-header: "<gradient:copper:gold><bold>Trial Leaderboard</bold></gradient> <muted>· <category></muted>"
+  top-entry: " <rank_color>#<rank></rank_color> <light><name></light> <dark_gray>-</dark_gray> <gold><value></gold>"
+  top-empty: "<muted>No runs recorded yet. Go conquer a chamber!</muted>"
+  info: "<muted>Wave</muted> <teal><wave></teal><muted><final></muted> <dark_gray>·</dark_gray> <muted>Players</muted> <light><players></light> <dark_gray>·</dark_gray> <muted>Team score</muted> <gold><score></gold> <dark_gray>·</dark_gray> <muted>Time</muted> <light><time></light><ominous>"
+
+  # Vaults
+  vault-refreshed: "<gold>✦</gold> <muted>The vault recognises you again - claim your reward!</muted>"
+  vault-cooldown: "<muted>This vault refreshes in</muted> <gold><time></gold>"
