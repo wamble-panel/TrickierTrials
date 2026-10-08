@@ -2,10 +2,13 @@ package de.t14d3.trickiertrials.command;
 
 import de.t14d3.trickiertrials.TrickierTrials;
 import de.t14d3.trickiertrials.boss.BossType;
+import de.t14d3.trickiertrials.guard.GuardManager;
+import de.t14d3.trickiertrials.guard.Warden;
 import de.t14d3.trickiertrials.session.TrialSession;
 import de.t14d3.trickiertrials.stats.StatsStore;
 import de.t14d3.trickiertrials.util.Text;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -42,6 +45,7 @@ public final class TrialsCommand implements TabExecutor {
             case "stats" -> stats(sender, args.length > 1 ? args[1] : null);
             case "top" -> top(sender, args.length > 1 ? args[1] : "score");
             case "boss" -> boss(sender, args);
+            case "warden" -> warden(sender, args);
             case "end" -> {
                 if (!checkAdmin(sender)) return true;
                 if (!(sender instanceof Player player)) {
@@ -149,20 +153,91 @@ public final class TrialsCommand implements TabExecutor {
         if (plugin.sessions().summonBoss(player, type) == null) Text.send(sender, "not-in-session");
     }
 
+    private void warden(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return;
+        String action = args.length > 1 ? args[1].toLowerCase(Locale.ROOT) : "list";
+        GuardManager guards = plugin.guards();
+        if (action.equals("list")) {
+            if (guards.all().isEmpty()) Text.send(sender, "warden-none");
+            for (Warden warden : guards.all()) {
+                Location post = warden.post();
+                Text.send(sender, "warden-list-entry", Text.ph("name", warden.name()),
+                        Text.ph("state", warden.isOpen() ? "open for " + Text.duration(warden.openUntil() - System.currentTimeMillis())
+                                : warden.isAlive() ? "guarding" : "waiting to spawn"),
+                        Text.ph("points", warden.waypoints().size()),
+                        Text.ph("location", post.getWorld().getName() + " " + post.getBlockX() + " " + post.getBlockY() + " " + post.getBlockZ()));
+            }
+            return;
+        }
+        if (args.length < 3) {
+            Text.send(sender, "warden-usage");
+            return;
+        }
+        String name = args[2];
+        if (action.equals("create")) {
+            if (!(sender instanceof Player player)) {
+                Text.send(sender, "player-only");
+                return;
+            }
+            guards.create(name, player.getLocation());
+            Text.send(sender, "warden-created", Text.ph("name", name), Text.ph("radius", (int) plugin.settings().guardRadius));
+            return;
+        }
+        Warden warden = guards.get(name);
+        if (warden == null) {
+            Text.send(sender, "warden-unknown", Text.ph("name", name));
+            return;
+        }
+        switch (action) {
+            case "point" -> {
+                if (!(sender instanceof Player player)) {
+                    Text.send(sender, "player-only");
+                    return;
+                }
+                warden.waypoints().add(player.getLocation().getBlock().getLocation().add(0.5, 0, 0.5));
+                guards.save();
+                Text.send(sender, "warden-point", Text.ph("name", warden.name()), Text.ph("points", warden.waypoints().size()));
+            }
+            case "clearpoints" -> {
+                warden.waypoints().clear();
+                warden.waypoints().add(warden.post());
+                guards.save();
+                Text.send(sender, "warden-point", Text.ph("name", warden.name()), Text.ph("points", 1));
+            }
+            case "respawn" -> {
+                guards.respawn(warden);
+                Text.send(sender, "warden-respawned", Text.ph("name", warden.name()));
+            }
+            case "open" -> {
+                guards.open(warden);
+                Text.send(sender, "warden-opened", Text.ph("name", warden.name()));
+            }
+            case "remove" -> {
+                guards.remove(warden.name());
+                Text.send(sender, "warden-removed", Text.ph("name", warden.name()));
+            }
+            default -> Text.send(sender, "warden-usage");
+        }
+    }
+
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> options = new ArrayList<>();
         if (args.length == 1) {
             options.addAll(List.of("info", "stats", "top"));
-            if (sender.hasPermission(ADMIN)) options.addAll(List.of("boss", "end", "reload"));
+            if (sender.hasPermission(ADMIN)) options.addAll(List.of("boss", "warden", "end", "reload"));
         } else if (args.length == 2) {
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "top" -> Arrays.stream(StatsStore.Category.values()).forEach(c -> options.add(c.name().toLowerCase(Locale.ROOT)));
                 case "boss" -> Arrays.stream(BossType.values()).forEach(b -> options.add(b.id()));
                 case "stats" -> plugin.getServer().getOnlinePlayers().forEach(p -> options.add(p.getName()));
+                case "warden" -> options.addAll(List.of("create", "point", "clearpoints", "respawn", "open", "remove", "list"));
                 default -> {
                 }
             }
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("warden") && !args[1].equalsIgnoreCase("create")) {
+            plugin.guards().all().forEach(w -> options.add(w.name()));
         }
         String prefix = args.length == 0 ? "" : args[args.length - 1].toLowerCase(Locale.ROOT);
         options.removeIf(option -> !option.toLowerCase(Locale.ROOT).startsWith(prefix));

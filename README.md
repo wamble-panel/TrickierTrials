@@ -20,7 +20,9 @@ the whole structure. For a custom-built chamber, it is the area around the spawn
 - **Boss waves.** Every 3rd wave (configurable) is a boss fight. A boss uses telegraphed abilities,
   summons minions at 66% and 33% health, and enrages at low health.
 - **Victory.** Beating the final wave (default 9) conquers the chamber. Players get fireworks,
-  victory loot and a server-wide broadcast, and the chamber then goes on cooldown.
+  a Trial Key each and a server-wide broadcast, and the chamber then goes on cooldown.
+- **Rewards are regular Trial Keys.** Bosses, victories and the Warden give Trial Keys, so the
+  chamber's own vaults stay the real prize.
 - **Player-count scaling.** Mob health and damage, kills per wave, boss health and boss loot all
   scale with the number of players in the encounter.
 - **Ominous chambers.** Ominous spawners make bosses stronger and elites more common.
@@ -30,6 +32,23 @@ Everything the plugin spawns is a mob that vanilla trial spawners also spawn: Br
 Zombie, Husk, Skeleton, Stray, Spider, Cave Spider, Slime and Silverfish. Reinforcements copy the
 mobs of the chamber's own spawners. Bosses are empowered versions of these mobs. The list is
 `trial-mobs.mob-pool` in the config.
+
+### Chamber Warden
+A guard boss patrols your corridor. While it lives, every trial spawner and vault within
+`warden.guard-radius` (default 64 blocks) of its post is **sealed**: spawners spawn nothing, no
+trial can start and vaults won't open. Kill the Warden and all of those chambers open. Everyone who
+helped gets a Trial Key, and players can go to whichever chamber they want. After
+`warden.unseal-duration` (default 20 minutes) the Warden comes back by itself and seals them again.
+Trials that are already running are not interrupted. The Warden goes back to its route when nobody
+is near, heals slowly, and never strays further than `leash-range` from its post.
+
+Setup, done once in-game:
+1. Stand in the corridor where the guard should stand and run `/trials warden create main`.
+2. Walk the route and run `/trials warden point main` at each turn. The Warden walks these
+   points back and forth.
+
+Nothing needs to be started by hand. The Warden spawns, patrols and respawns on its own, and the
+open/sealed state survives restarts.
 
 ### Bosses
 | Boss | Mob | Abilities |
@@ -76,6 +95,12 @@ the Paper API and no longer needs server internals.
 | `/trials stats [player]` | Shows personal records | – |
 | `/trials top [score\|wave\|kills\|bosses\|victories]` | Shows the leaderboard | – |
 | `/trials boss <type>` | Summons a boss in your encounter, or starts an encounter if you're not in one | `trickiertrials.admin` |
+| `/trials warden create <name>` | Creates a Warden with its post at your position | `trickiertrials.admin` |
+| `/trials warden point <name>` | Adds your position as a patrol point | `trickiertrials.admin` |
+| `/trials warden clearpoints <name>` | Resets the patrol route | `trickiertrials.admin` |
+| `/trials warden respawn <name>` | Brings the Warden back and seals the trials now | `trickiertrials.admin` |
+| `/trials warden open <name>` | Opens the trials without a fight (for testing) | `trickiertrials.admin` |
+| `/trials warden remove <name>` / `list` | Deletes a Warden or lists all Wardens | `trickiertrials.admin` |
 | `/trials end` | Ends your encounter | `trickiertrials.admin` |
 | `/trials reload` | Reloads the config | `trickiertrials.admin` |
 

@@ -153,21 +153,33 @@ bosses:
       health: 230
       damage: 1.0
   # Dropped when a boss dies. Format: "MATERIAL amount chance". Amounts scale with player count.
+  # Regular Trial Keys by default, so the chamber's vaults stay the real reward.
   rewards:
     - "TRIAL_KEY 1 1.0"
-    - "OMINOUS_TRIAL_KEY 1 0.25"
-    - "EMERALD 6 1.0"
-    - "DIAMOND 2 0.5"
-    - "GOLDEN_APPLE 1 0.6"
-    - "WIND_CHARGE 8 0.7"
-    - "ENCHANTED_GOLDEN_APPLE 1 0.04"
-    - "HEAVY_CORE 1 0.02"
-  # Extra loot when the final wave is beaten.
+  # Given to every player when the final wave is beaten.
   victory-rewards:
-    - "OMINOUS_TRIAL_KEY 1 1.0"
-    - "DIAMOND 4 1.0"
-    - "EXPERIENCE_BOTTLE 16 1.0"
-    - "TOTEM_OF_UNDYING 1 0.25"
+    - "TRIAL_KEY 1 1.0"
+
+# ───────────────────────────── Chamber Warden ───────────────────────────────
+# A guard boss that patrols your corridor. While it lives, every trial spawner and vault within
+# guard-radius of its post is sealed - nobody can start a trial. Kill it to open them all.
+# After unseal-duration it comes back on its own and seals them again (running trials continue).
+# Setup (stand in the corridor):  /trials warden create <name>   then walk the route and run
+# /trials warden point <name> at each corner. The warden walks the points back and forth.
+warden:
+  enabled: true
+  boss: juggernaut             # ability kit: tempest, bog-sovereign, juggernaut, brood-mother, rimeborn
+  name: "<gradient:copper:gold><bold>Chamber Warden</bold></gradient>"
+  health: 300
+  damage: 1.2
+  guard-radius: 64             # blocks around the post whose spawners & vaults are sealed
+  aggro-range: 14              # how close players must come before it fights
+  leash-range: 48              # it never strays further than this from its post
+  unseal-duration: 1200        # seconds the trials stay open after it dies
+  seal-vaults: true
+  # Given to every player who helped kill it.
+  rewards:
+    - "TRIAL_KEY 1 1.0"
 
 # ───────────────────────────── Score & combos ───────────────────────────────
 score:
@@ -216,6 +228,7 @@ messages:
     - "<copper>/trials stats [player]</copper> <muted>- personal records</muted>"
     - "<copper>/trials top [score|wave|kills|bosses|victories]</copper> <muted>- leaderboard</muted>"
     - "<copper>/trials boss <type></copper> <muted>- summon a boss (admin)</muted>"
+    - "<copper>/trials warden <create|point|respawn|open|remove|list> <name></copper> <muted>- chamber guard (admin)</muted>"
     - "<copper>/trials end</copper> <muted>- end your encounter (admin)</muted>"
     - "<copper>/trials reload</copper> <muted>- reload the config (admin)</muted>"
 
@@ -276,6 +289,20 @@ messages:
   top-entry: " <rank_color>#<rank></rank_color> <light><name></light> <dark_gray>-</dark_gray> <gold><value></gold>"
   top-empty: "<muted>No runs recorded yet. Go conquer a chamber!</muted>"
   info: "<muted>Wave</muted> <teal><wave></teal><muted><final></muted> <dark_gray>·</dark_gray> <muted>Players</muted> <light><players></light> <dark_gray>·</dark_gray> <muted>Team score</muted> <gold><score></gold> <dark_gray>·</dark_gray> <muted>Time</muted> <light><time></light><ominous>"
+
+  # Chamber Warden
+  warden-sealed: "<ominous>⚔</ominous> <warden> <muted>guards these trials - defeat it to unseal them</muted>"
+  warden-returns: "<warden> <muted>has returned. The trial chambers are sealed again.</muted>"
+  warden-slain: "<gold>✦</gold> <warden> <muted>was slain by</muted> <light><players></light><muted>! The trial chambers are open for</muted> <gold><time></gold>"
+  warden-created: "<success>Warden <light><name></light> created here.</success> <muted>It seals spawners within <radius> blocks. Add patrol points with</muted> <copper>/trials warden point <name></copper>"
+  warden-point: "<success>Patrol point added to <light><name></light></success> <muted>(<points> points)</muted>"
+  warden-respawned: "<success>Warden <light><name></light> is back and the trials are sealed.</success>"
+  warden-opened: "<success>Warden <light><name></light> removed - the trials are open.</success>"
+  warden-removed: "<muted>Warden <light><name></light> deleted.</muted>"
+  warden-unknown: "<danger>No warden named <light><name></light>.</danger>"
+  warden-none: "<muted>No wardens yet. Stand in your corridor and use</muted> <copper>/trials warden create <name></copper>"
+  warden-list-entry: "<copper><name></copper> <dark_gray>·</dark_gray> <light><state></light> <dark_gray>·</dark_gray> <muted><points> points · <location></muted>"
+  warden-usage: "<muted>Usage:</muted> <copper>/trials warden <create|point|clearpoints|respawn|open|remove|list> <name></copper>"
 
   # Vaults
   vault-refreshed: "<gold>✦</gold> <muted>The vault recognises you again - claim your reward!</muted>"

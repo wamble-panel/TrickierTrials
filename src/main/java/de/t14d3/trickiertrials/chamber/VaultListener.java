@@ -46,7 +46,7 @@ public final class VaultListener implements Listener {
         block.getChunk().getPersistentDataContainer().set(key(block, event.getPlayer().getUniqueId()), PersistentDataType.LONG, System.currentTimeMillis());
     }
 
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onVaultInteract(PlayerInteractEvent event) {
         long cooldown = plugin.settings().vaultCooldownMillis;
         if (!plugin.settings().vaultResetEnabled || cooldown < 0) return;

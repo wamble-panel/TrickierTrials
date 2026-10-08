@@ -12,6 +12,7 @@ public final class Keys {
     public static final NamespacedKey AFFIXES = new NamespacedKey("trickiertrials", "affixes");
     public static final NamespacedKey BOSS = new NamespacedKey("trickiertrials", "boss");
     public static final NamespacedKey MINION = new NamespacedKey("trickiertrials", "minion");
+    public static final NamespacedKey GUARD = new NamespacedKey("trickiertrials", "guard");
     public static final NamespacedKey CELEBRATION = new NamespacedKey("trickiertrials", "celebration");
     public static final NamespacedKey UNDYING_USED = new NamespacedKey("trickiertrials", "undying_used");
 
@@ -24,6 +25,10 @@ public final class Keys {
 
     public static void markTrialMob(Entity entity) {
         entity.getPersistentDataContainer().set(TRIAL_SPAWNED, PersistentDataType.INTEGER, 1);
+    }
+
+    public static boolean isGuard(Entity entity) {
+        return entity.getPersistentDataContainer().has(GUARD, PersistentDataType.STRING);
     }
 
     public static boolean isBoss(Entity entity) {

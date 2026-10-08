@@ -104,6 +104,19 @@ public final class Settings {
     public final boolean sounds;
     public final boolean broadcastVictories;
 
+    // Chamber Warden
+    public final boolean guardEnabled;
+    public final String guardBoss;
+    public final String guardName;
+    public final double guardHealth;
+    public final double guardDamage;
+    public final double guardRadius;
+    public final double guardAggroRange;
+    public final double guardLeashRange;
+    public final int guardUnsealSeconds;
+    public final boolean guardSealVaults;
+    public final List<Reward> guardRewards;
+
     // Vaults
     public final boolean vaultResetEnabled;
     public final long vaultCooldownMillis;
@@ -197,6 +210,18 @@ public final class Settings {
         titles = c.getBoolean("session.titles", true);
         sounds = c.getBoolean("session.sounds", true);
         broadcastVictories = c.getBoolean("session.broadcast-victories", true);
+
+        guardEnabled = c.getBoolean("warden.enabled", true);
+        guardBoss = c.getString("warden.boss", "juggernaut");
+        guardName = c.getString("warden.name", "<gradient:copper:gold><bold>Chamber Warden</bold></gradient>");
+        guardHealth = c.getDouble("warden.health", 300);
+        guardDamage = c.getDouble("warden.damage", 1.2);
+        guardRadius = c.getDouble("warden.guard-radius", 64);
+        guardAggroRange = c.getDouble("warden.aggro-range", 14);
+        guardLeashRange = c.getDouble("warden.leash-range", 48);
+        guardUnsealSeconds = Math.max(10, c.getInt("warden.unseal-duration", 1200));
+        guardSealVaults = c.getBoolean("warden.seal-vaults", true);
+        guardRewards = Reward.parse(c.getStringList("warden.rewards"), logger);
 
         vaultResetEnabled = c.getBoolean("vault-reset.enabled", true);
         long cooldown = c.getLong("vault-reset.cooldown", 86400);

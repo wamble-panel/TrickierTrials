@@ -3,6 +3,7 @@ package de.t14d3.trickiertrials;
 import de.t14d3.trickiertrials.chamber.ChamberProtectionListener;
 import de.t14d3.trickiertrials.chamber.VaultListener;
 import de.t14d3.trickiertrials.command.TrialsCommand;
+import de.t14d3.trickiertrials.guard.GuardManager;
 import de.t14d3.trickiertrials.mob.AffixListener;
 import de.t14d3.trickiertrials.session.SessionManager;
 import de.t14d3.trickiertrials.stats.StatsStore;
@@ -21,6 +22,7 @@ public final class TrickierTrials extends JavaPlugin {
     private SessionManager sessions;
     private AffixListener affixes;
     private ChamberProtectionListener protection;
+    private GuardManager guards;
 
     @Override
     public void onEnable() {
@@ -32,13 +34,16 @@ public final class TrickierTrials extends JavaPlugin {
         sessions = new SessionManager(this);
         affixes = new AffixListener(this);
         protection = new ChamberProtectionListener(this);
+        guards = new GuardManager(this);
 
         var pm = getServer().getPluginManager();
         pm.registerEvents(protection, this);
         pm.registerEvents(new VaultListener(this), this);
         pm.registerEvents(affixes, this);
         pm.registerEvents(sessions, this);
+        pm.registerEvents(guards, this);
         sessions.startTicking();
+        guards.startTicking();
 
         PluginCommand command = getCommand("trickiertrials");
         if (command != null) {
@@ -51,6 +56,7 @@ public final class TrickierTrials extends JavaPlugin {
     @Override
     public void onDisable() {
         if (sessions != null) sessions.shutdown();
+        if (guards != null) guards.shutdown();
         if (protection != null) protection.restoreAll();
         if (stats != null) stats.saveNow();
     }
@@ -89,6 +95,10 @@ public final class TrickierTrials extends JavaPlugin {
 
     public SessionManager sessions() {
         return sessions;
+    }
+
+    public GuardManager guards() {
+        return guards;
     }
 
     public AffixListener affixes() {

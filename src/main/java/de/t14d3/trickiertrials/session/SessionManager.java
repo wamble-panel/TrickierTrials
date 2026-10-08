@@ -5,6 +5,7 @@ import de.t14d3.trickiertrials.TrickierTrials;
 import de.t14d3.trickiertrials.boss.BossType;
 import de.t14d3.trickiertrials.boss.TrialBoss;
 import de.t14d3.trickiertrials.chamber.Chambers;
+import de.t14d3.trickiertrials.guard.Warden;
 import de.t14d3.trickiertrials.mob.MobScaler;
 import de.t14d3.trickiertrials.util.Keys;
 import org.bukkit.Location;
@@ -161,6 +162,16 @@ public final class SessionManager implements Listener {
         Location location = spawner.getLocation();
         Collection<Player> tracked = spawner.getTrackedPlayers();
 
+        // A living Chamber Warden keeps the trials it guards sealed: nothing spawns, no encounter starts.
+        if (sessionAt(location) == null) {
+            Warden warden = plugin.guards().sealing(location);
+            if (warden != null) {
+                event.setCancelled(true);
+                plugin.guards().notifySealed(warden, tracked);
+                return;
+            }
+        }
+
         if (!settings().sessionsEnabled) {
             MobScaler.apply(entity, new MobScaler.Context(MobScaler.tierFor(tracked), 1, Math.max(1, tracked.size()), spawner.isOminous()), settings(), true);
             return;
@@ -265,7 +276,7 @@ public final class SessionManager implements Listener {
     @EventHandler
     public void onEntitiesLoad(EntitiesLoadEvent event) {
         for (Entity entity : event.getEntities()) {
-            if (Keys.isBoss(entity) && !mobIndex.containsKey(entity.getUniqueId())) entity.remove();
+            if (Keys.isBoss(entity) && !Keys.isGuard(entity) && !mobIndex.containsKey(entity.getUniqueId())) entity.remove();
         }
     }
 

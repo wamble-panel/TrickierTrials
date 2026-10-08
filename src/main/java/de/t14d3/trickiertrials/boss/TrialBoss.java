@@ -56,7 +56,9 @@ public final class TrialBoss {
     private final BossType type;
     private final LivingEntity entity;
     private final Component name;
-    private final Location home;
+    private Location home;
+    private double leashRange = 32;
+    private double aggroRange = 40;
     private final double damageMultiplier;
     private final long spawnedAt = System.currentTimeMillis();
     private final BossBar bar;
@@ -86,7 +88,11 @@ public final class TrialBoss {
         double health = Math.min(1024, settings.bossHealth(type.id(), type.defaultHealth()) * multiplier);
         double damage = settings.bossDamage(type.id()) * (ominous ? settings.bossOminousMultiplier : 1) * (finalBoss ? 1.2 : 1);
         Component name = Text.parse(settings.bossName(type.id(), type.defaultName()));
+        return spawnCustom(host, type, location, name, health, damage, ominous);
+    }
 
+    /** Spawns a boss with explicit stats (used for the Chamber Warden). */
+    public static TrialBoss spawnCustom(BossHost host, BossType type, Location location, Component name, double health, double damage, boolean ominous) {
         World world = location.getWorld();
         world.strikeLightningEffect(location);
         world.spawnParticle(Particle.TRIAL_OMEN, location.clone().add(0, 1, 0), 80, 1.2, 1.2, 1.2, 0.05);
@@ -177,6 +183,21 @@ public final class TrialBoss {
         return System.currentTimeMillis() - spawnedAt;
     }
 
+    /** Pulls the boss back to {@code home} whenever it gets further away than {@code range}. */
+    public void leash(Location home, double range) {
+        this.home = home.clone();
+        this.leashRange = range;
+    }
+
+    /** Only players within this range are targeted and hit by abilities. */
+    public void aggroRange(double range) {
+        this.aggroRange = range;
+    }
+
+    public Collection<Player> playersInAggroRange() {
+        return nearbyPlayers(aggroRange);
+    }
+
     public boolean isWeb(Location location) {
         return webs.contains(location);
     }
@@ -201,11 +222,11 @@ public final class TrialBoss {
 
     public void tick() {
         if (!isAlive()) return;
-        Collection<Player> players = nearbyPlayers(40);
+        Collection<Player> players = nearbyPlayers(aggroRange);
         updateBar();
 
         // Leash: never let the boss be dragged out of the arena.
-        if (entity.getLocation().distanceSquared(home) > 32 * 32 || entity.getLocation().getY() < home.getY() - 12) {
+        if (entity.getLocation().distanceSquared(home) > leashRange * leashRange || entity.getLocation().getY() < home.getY() - 12) {
             entity.getWorld().spawnParticle(Particle.REVERSE_PORTAL, entity.getLocation().add(0, 1, 0), 40, 0.5, 1, 0.5, 0.1);
             entity.teleport(home);
             Fx.worldSound(home, Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.6f);
