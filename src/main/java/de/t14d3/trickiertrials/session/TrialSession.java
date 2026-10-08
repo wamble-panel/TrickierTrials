@@ -170,8 +170,13 @@ public final class TrialSession implements BossHost {
     }
 
     private boolean anyBossEnabled() {
-        for (BossType type : BossType.values()) if (settings().bossEnabled(type.id())) return true;
+        for (BossType type : BossType.values()) if (bossAllowed(type)) return true;
         return false;
+    }
+
+    /** A boss (and its minions) must be a trial chamber mob from the configured pool. */
+    private boolean bossAllowed(BossType type) {
+        return settings().bossEnabled(type.id()) && settings().mobPool.contains(type.entityType()) && settings().mobPool.contains(type.minionType());
     }
 
     private String finalSuffix() {
@@ -232,7 +237,7 @@ public final class TrialSession implements BossHost {
 
     private BossType pickBossType() {
         List<BossType> options = new ArrayList<>();
-        for (BossType type : BossType.values()) if (settings().bossEnabled(type.id()) && type != lastBoss) options.add(type);
+        for (BossType type : BossType.values()) if (bossAllowed(type) && type != lastBoss) options.add(type);
         if (options.isEmpty()) return lastBoss != null ? lastBoss : BossType.JUGGERNAUT;
         return options.get(ThreadLocalRandom.current().nextInt(options.size()));
     }
@@ -342,8 +347,11 @@ public final class TrialSession implements BossHost {
                 }
             }
         }
+        // Only ever spawn trial chamber mobs: prefer what this chamber's spawners use, else the configured pool.
+        Set<EntityType> pool = settings().mobPool;
         List<EntityType> types = new ArrayList<>(new HashSet<>(spawners.values()));
-        if (types.isEmpty()) types.add(EntityType.ZOMBIE);
+        types.retainAll(pool);
+        if (types.isEmpty()) types.addAll(pool);
         ThreadLocalRandom random = ThreadLocalRandom.current();
         MobScaler.Context context = new MobScaler.Context(MobScaler.tierFor(players), wave, playerCount(), ominous);
 
@@ -353,7 +361,8 @@ public final class TrialSession implements BossHost {
             if (!candidates.isEmpty()) {
                 Location spawner = candidates.get(random.nextInt(candidates.size()));
                 origin = spawner.clone().add(0.5, 0, 0.5);
-                type = spawners.getOrDefault(spawner, types.get(random.nextInt(types.size())));
+                type = spawners.get(spawner);
+                if (type == null || !pool.contains(type)) type = types.get(random.nextInt(types.size()));
             } else {
                 Player player = new ArrayList<>(players).get(random.nextInt(players.size()));
                 double angle = random.nextDouble(Math.PI * 2);

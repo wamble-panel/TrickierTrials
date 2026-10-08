@@ -3,6 +3,7 @@ package de.t14d3.trickiertrials.boss;
 import org.bukkit.entity.Bogged;
 import org.bukkit.entity.Breeze;
 import org.bukkit.entity.CaveSpider;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Spider;
 import org.bukkit.entity.Stray;
@@ -46,6 +47,19 @@ public enum BossType {
 
     public Class<? extends LivingEntity> minionClass() {
         return minionClass;
+    }
+
+    public EntityType entityType() {
+        return typeOf(entityClass);
+    }
+
+    public EntityType minionType() {
+        return typeOf(minionClass);
+    }
+
+    private static EntityType typeOf(Class<? extends LivingEntity> clazz) {
+        for (EntityType type : EntityType.values()) if (type.getEntityClass() == clazz) return type;
+        return EntityType.UNKNOWN;
     }
 
     public double defaultHealth() {

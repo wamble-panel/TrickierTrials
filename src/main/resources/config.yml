@@ -72,6 +72,9 @@ trial-mobs:
   per-extra-player:
     health: 0.15
     damage: 0.05
+  # The only mobs TrickierTrials will ever spawn itself (reinforcements, boss minions, Splitting elites).
+  # Defaults to everything a vanilla trial spawner spawns. Bosses whose mob is missing here are skipped.
+  mob-pool: [BREEZE, BOGGED, ZOMBIE, HUSK, SKELETON, STRAY, SPIDER, CAVE_SPIDER, SLIME, SILVERFISH]
   # Trial mobs only drop these items (prevents armor / weapon farming).
   restrict-drops: true
   allowed-drops: [BREEZE_ROD, ROTTEN_FLESH, BONE, ARROW, STRING, SPIDER_EYE, SLIME_BALL, TIPPED_ARROW]

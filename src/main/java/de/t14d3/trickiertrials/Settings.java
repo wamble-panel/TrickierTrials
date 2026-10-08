@@ -3,6 +3,7 @@ package de.t14d3.trickiertrials;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -16,6 +17,11 @@ import java.util.logging.Logger;
 
 /** Snapshot of all configuration values. Rebuilt on every reload. */
 public final class Settings {
+
+    /** Every mob a vanilla trial spawner can spawn. */
+    public static final Set<EntityType> DEFAULT_MOB_POOL = EnumSet.of(
+            EntityType.BREEZE, EntityType.BOGGED, EntityType.ZOMBIE, EntityType.HUSK, EntityType.SKELETON,
+            EntityType.STRAY, EntityType.SPIDER, EntityType.CAVE_SPIDER, EntityType.SLIME, EntityType.SILVERFISH);
 
     // Chamber protection
     public final boolean protectionEnabled;
@@ -34,6 +40,7 @@ public final class Settings {
     public final double damagePerExtraPlayer;
     public final boolean restrictDrops;
     public final Set<Material> allowedDrops = EnumSet.noneOf(Material.class);
+    public final Set<EntityType> mobPool = EnumSet.noneOf(EntityType.class);
     public final boolean easterEgg;
     public final String easterEggName;
 
@@ -122,6 +129,14 @@ public final class Settings {
             if (material == null) logger.warning("Invalid material in allowed-drops: " + name);
             else allowedDrops.add(material);
         }
+        for (String name : c.getStringList("trial-mobs.mob-pool")) {
+            try {
+                mobPool.add(EntityType.valueOf(name.trim().toUpperCase(Locale.ROOT)));
+            } catch (IllegalArgumentException e) {
+                logger.warning("Invalid entity type in mob-pool: " + name);
+            }
+        }
+        if (mobPool.isEmpty()) mobPool.addAll(DEFAULT_MOB_POOL);
         easterEgg = c.getBoolean("trial-mobs.easter-egg", false);
         easterEggName = c.getString("trial-mobs.easter-egg-name", "Klein Tiade");
 

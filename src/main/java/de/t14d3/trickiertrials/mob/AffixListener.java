@@ -98,7 +98,7 @@ public final class AffixListener implements Listener {
             plugin.getServer().getScheduler().runTaskLater(plugin,
                     () -> location.getWorld().createExplosion(null, location, 2.4f, false, false), 25L);
         }
-        if (affixes.contains(Affix.SPLITTING) && mob.getType().getEntityClass() != null) {
+        if (affixes.contains(Affix.SPLITTING) && plugin.settings().mobPool.contains(mob.getType()) && mob.getType().getEntityClass() != null) {
             Location location = mob.getLocation();
             location.getWorld().spawnParticle(Particle.WITCH, location.clone().add(0, 0.8, 0), 25, 0.4, 0.4, 0.4, 0.05);
             for (int i = 0; i < 2; i++) {

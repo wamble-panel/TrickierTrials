@@ -21,6 +21,12 @@ the whole structure. For a custom-built chamber, it is the area around the spawn
   scale with the number of players in the encounter.
 - **Ominous chambers.** Ominous spawners make bosses stronger and elites more common.
 
+### Only trial chamber mobs
+Everything the plugin spawns is a mob that vanilla trial spawners also spawn: Breeze, Bogged,
+Zombie, Husk, Skeleton, Stray, Spider, Cave Spider, Slime and Silverfish. Reinforcements copy the
+mobs of the chamber's own spawners. Bosses are empowered versions of these mobs. The list is
+`trial-mobs.mob-pool` in the config.
+
 ### Bosses
 | Boss | Mob | Abilities |
 |------|-----|-----------|
@@ -82,6 +88,10 @@ danger `#FF5E6C`, success `#7EE081`, muted `#9A9AA6`, light `#F3EEE7`.
 A config from v1 is migrated automatically. The old file is kept as `config-v1.yml`.
 
 ## Building
+GitHub Actions builds the plugin on every push. Download the jar from the run's **TrickierTrials**
+artifact, or from the release created for each `v*` tag.
+
+To build locally:
 ```
 ./gradlew build
 ```
