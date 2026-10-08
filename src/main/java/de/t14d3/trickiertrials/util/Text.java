@@ -65,7 +65,7 @@ public final class Text {
         }
         paletteResolver = buildResolver();
         messages = config.getConfigurationSection("messages");
-        prefix = messages == null ? "" : messages.getString("prefix", "");
+        prefix = raw("prefix");
     }
 
     private static TagResolver buildResolver() {
@@ -102,7 +102,9 @@ public final class Text {
     }
 
     public static String raw(String key) {
-        return messages == null ? "" : messages.getString(key, "");
+        // No explicit default here, so values missing from an older config fall back to the bundled config.yml.
+        String value = messages == null ? null : messages.getString(key);
+        return value == null ? "" : value;
     }
 
     public static Component msg(String key, TagResolver... resolvers) {

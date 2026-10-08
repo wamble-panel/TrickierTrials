@@ -235,11 +235,27 @@ public final class SessionManager implements Listener {
             event.setCancelled(true);
             return;
         }
-        if (!(event.getEntity() instanceof Player victim)) return;
         Entity source = damager instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter ? shooter : damager;
-        if (!Keys.isBoss(source)) return;
+
+        // Player hits a trial mob: Glass Cannon makes players hit harder.
+        if (source instanceof Player && !(event.getEntity() instanceof Player)) {
+            TrialSession session = mobIndex.get(event.getEntity().getUniqueId());
+            if (session != null && session.has(Modifier.GLASS_CANNON)) event.setDamage(event.getDamage() * 1.35);
+            return;
+        }
+        if (!(event.getEntity() instanceof Player victim) || !Keys.isTrialMob(source)) return;
         TrialSession session = mobIndex.get(source.getUniqueId());
-        if (session != null && session.boss() != null && session.boss().entity().equals(source)) session.boss().onMelee(victim);
+        if (session == null) return;
+
+        if (session.boss() != null && session.boss().entity().equals(source)) session.boss().onMelee(victim);
+        if (session.has(Modifier.GLASS_CANNON)) event.setDamage(event.getDamage() * 1.35);
+        if (session.has(Modifier.GALE)) {
+            plugin.getServer().getScheduler().runTask(plugin, () -> victim.setVelocity(victim.getVelocity().setY(0.75)));
+        }
+        if (session.has(Modifier.LEECHING) && source instanceof LivingEntity mob) {
+            var max = mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+            if (max != null) mob.setHealth(Math.min(max.getValue(), mob.getHealth() + event.getFinalDamage() * 0.5));
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -248,6 +264,9 @@ public final class SessionManager implements Listener {
         switch (event.getCause()) {
             case FALL, SUFFOCATION, DROWNING, CRAMMING, FLY_INTO_WALL, FIRE, FIRE_TICK, LAVA, FREEZE, HOT_FLOOR -> event.setCancelled(true);
             default -> {
+                // Bosses for very large groups would exceed the 1024 health cap - they take less damage instead.
+                Double taken = event.getEntity().getPersistentDataContainer().get(Keys.DAMAGE_TAKEN, PersistentDataType.DOUBLE);
+                if (taken != null && taken < 1) event.setDamage(event.getDamage() * taken);
             }
         }
     }

@@ -104,6 +104,27 @@ public final class Settings {
     public final boolean sounds;
     public final boolean broadcastVictories;
 
+    // Replayability
+    public final boolean progressionEnabled;
+    public final int maxRank;
+    public final double rankHealth;
+    public final double rankDamage;
+    public final double rankElite;
+    public final double rankBossHealth;
+    public final int bossAffixRank;
+    public final double rankRewardBonus;
+    public final double rankScoreBonus;
+    public final boolean modifiersEnabled;
+    public final int modifiersBase;
+    public final int modifiersPerRanks;
+    public final int modifiersMax;
+    public final Set<String> disabledModifiers = new HashSet<>();
+    public final double eventChance;
+    public final Set<String> disabledEvents = new HashSet<>();
+    public final int blitzSeconds;
+    public final int treasureSeconds;
+    public final List<Reward> blitzRewards;
+
     // Chamber Warden
     public final boolean guardEnabled;
     public final String guardBoss;
@@ -210,6 +231,26 @@ public final class Settings {
         titles = c.getBoolean("session.titles", true);
         sounds = c.getBoolean("session.sounds", true);
         broadcastVictories = c.getBoolean("session.broadcast-victories", true);
+
+        progressionEnabled = c.getBoolean("progression.enabled", true);
+        maxRank = Math.max(0, c.getInt("progression.max-rank", 10));
+        rankHealth = c.getDouble("progression.health-per-rank", 0.08);
+        rankDamage = c.getDouble("progression.damage-per-rank", 0.05);
+        rankElite = c.getDouble("progression.elite-chance-per-rank", 0.03);
+        rankBossHealth = c.getDouble("progression.boss-health-per-rank", 0.10);
+        bossAffixRank = c.getInt("progression.boss-affix-rank", 3);
+        rankRewardBonus = c.getDouble("progression.reward-bonus-per-rank", 0.25);
+        rankScoreBonus = c.getDouble("progression.score-bonus-per-rank", 0.10);
+        modifiersEnabled = c.getBoolean("modifiers.enabled", true);
+        modifiersBase = Math.max(0, c.getInt("modifiers.base", 1));
+        modifiersPerRanks = c.getInt("modifiers.extra-every-ranks", 3);
+        modifiersMax = Math.max(0, c.getInt("modifiers.max", 4));
+        for (String name : c.getStringList("modifiers.disabled")) disabledModifiers.add(name.toUpperCase(Locale.ROOT).replace('-', '_'));
+        eventChance = c.getDouble("wave-events.chance", 0.35);
+        for (String name : c.getStringList("wave-events.disabled")) disabledEvents.add(name.toUpperCase(Locale.ROOT).replace('-', '_'));
+        blitzSeconds = Math.max(10, c.getInt("wave-events.blitz-seconds", 40));
+        treasureSeconds = Math.max(10, c.getInt("wave-events.treasure-seconds", 35));
+        blitzRewards = Reward.parse(c.getStringList("wave-events.blitz-rewards"), logger);
 
         guardEnabled = c.getBoolean("warden.enabled", true);
         guardBoss = c.getString("warden.boss", "juggernaut");

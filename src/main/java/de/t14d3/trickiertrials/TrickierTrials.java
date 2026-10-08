@@ -63,6 +63,19 @@ public final class TrickierTrials extends JavaPlugin {
 
     public void reload() {
         reloadConfig();
+        // Add options introduced by updates to an existing config.yml (existing values are kept).
+        boolean missing = false;
+        var defaults = getConfig().getDefaults();
+        for (String key : defaults == null ? java.util.Set.<String>of() : defaults.getKeys(true)) {
+            if (!getConfig().isSet(key)) {
+                missing = true;
+                break;
+            }
+        }
+        if (missing) {
+            getConfig().options().copyDefaults(true);
+            saveConfig();
+        }
         settings = new Settings(getConfig(), getLogger());
         Text.load(getConfig());
         Fx.setSounds(settings.sounds);

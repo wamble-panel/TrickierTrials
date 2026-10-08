@@ -82,10 +82,15 @@ public final class TrialBoss {
     }
 
     public static TrialBoss spawn(BossHost host, BossType type, Location location, int players, boolean ominous, boolean finalBoss) {
+        return spawn(host, type, location, players, ominous, finalBoss, 1);
+    }
+
+    /** {@code strength} multiplies health on top of party size (Trial Rank, modifiers). */
+    public static TrialBoss spawn(BossHost host, BossType type, Location location, int players, boolean ominous, boolean finalBoss, double strength) {
         Settings settings = host.plugin().settings();
         double multiplier = (1 + settings.bossHealthPerExtraPlayer * Math.max(0, players - 1))
                 * (ominous ? settings.bossOminousMultiplier : 1) * (finalBoss ? settings.bossFinalMultiplier : 1);
-        double health = Math.min(1024, settings.bossHealth(type.id(), type.defaultHealth()) * multiplier);
+        double health = settings.bossHealth(type.id(), type.defaultHealth()) * multiplier * strength;
         double damage = settings.bossDamage(type.id()) * (ominous ? settings.bossOminousMultiplier : 1) * (finalBoss ? 1.2 : 1);
         Component name = Text.parse(settings.bossName(type.id(), type.defaultName()));
         return spawnCustom(host, type, location, name, health, damage, ominous);
@@ -93,15 +98,20 @@ public final class TrialBoss {
 
     /** Spawns a boss with explicit stats (used for the Chamber Warden). */
     public static TrialBoss spawnCustom(BossHost host, BossType type, Location location, Component name, double health, double damage, boolean ominous) {
+        // Health caps at 1024: for huge groups, the rest of the bulk becomes damage resistance.
+        double wanted = health;
+        health = Math.min(1024, wanted);
+        double damageTaken = health / wanted;
         World world = location.getWorld();
         world.strikeLightningEffect(location);
         world.spawnParticle(Particle.TRIAL_OMEN, location.clone().add(0, 1, 0), 80, 1.2, 1.2, 1.2, 0.05);
         world.spawnParticle(Particle.SONIC_BOOM, location.clone().add(0, 1, 0), 1);
         Fx.worldSound(location, Sound.ENTITY_WITHER_SPAWN, 1.2f, 1.1f);
 
+        double finalHealth = health;
         LivingEntity entity = world.spawn(location, type.entityClass(), CreatureSpawnEvent.SpawnReason.CUSTOM, e -> {
-            setBase(e, Attribute.MAX_HEALTH, health);
-            e.setHealth(health);
+            setBase(e, Attribute.MAX_HEALTH, finalHealth);
+            e.setHealth(finalHealth);
             Affix.multiply(e, Attribute.ATTACK_DAMAGE, damage);
             setBase(e, Attribute.SCALE, type.scale());
             setBase(e, Attribute.KNOCKBACK_RESISTANCE, 0.8);
@@ -112,6 +122,7 @@ public final class TrialBoss {
             e.setPersistent(true);
             e.setGlowing(true);
             e.getPersistentDataContainer().set(Keys.BOSS, PersistentDataType.STRING, type.id());
+            if (damageTaken < 1) e.getPersistentDataContainer().set(Keys.DAMAGE_TAKEN, PersistentDataType.DOUBLE, damageTaken);
             Keys.markTrialMob(e);
             equip(e, type);
         });
@@ -293,6 +304,7 @@ public final class TrialBoss {
     }
 
     private void summonMinions(int count) {
+        count = Math.min(count, 6); // keep huge groups from flooding the chamber
         Location base = entity.getLocation();
         Fx.worldSound(base, Sound.ENTITY_EVOKER_PREPARE_SUMMON, 1.2f, 0.9f);
         for (int i = 0; i < count; i++) {

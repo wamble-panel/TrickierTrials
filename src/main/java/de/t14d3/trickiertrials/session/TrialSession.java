@@ -5,6 +5,7 @@ import de.t14d3.trickiertrials.TrickierTrials;
 import de.t14d3.trickiertrials.boss.BossHost;
 import de.t14d3.trickiertrials.boss.BossType;
 import de.t14d3.trickiertrials.boss.TrialBoss;
+import de.t14d3.trickiertrials.mob.Affix;
 import de.t14d3.trickiertrials.mob.MobScaler;
 import de.t14d3.trickiertrials.util.Fx;
 import de.t14d3.trickiertrials.util.Text;
@@ -91,6 +92,15 @@ public final class TrialSession implements BossHost {
     private TrialBoss boss;
     private BossType lastBoss;
 
+    // Replayability
+    private int rank;
+    private final Set<Modifier> modifiers = java.util.EnumSet.noneOf(Modifier.class);
+    private WaveEvent event;
+    private WaveEvent lastEvent;
+    private int eventTicks;
+    private UUID treasure;
+    private int darknessTicks;
+
     TrialSession(TrickierTrials plugin, SessionManager manager, World world, BoundingBox region, String regionKey) {
         this.plugin = plugin;
         this.manager = manager;
@@ -156,6 +166,39 @@ public final class TrialSession implements BossHost {
         return System.currentTimeMillis() - startedAt;
     }
 
+    public int rank() {
+        return rank;
+    }
+
+    public Set<Modifier> modifiers() {
+        return modifiers;
+    }
+
+    public boolean has(Modifier modifier) {
+        return modifiers.contains(modifier);
+    }
+
+    /** Score multiplier from modifiers, the current wave event and the Trial Rank. */
+    private double scoreMultiplier() {
+        double multiplier = 1 + settings().rankScoreBonus * rank;
+        for (Modifier modifier : modifiers) multiplier *= modifier.scoreMultiplier();
+        if (event == WaveEvent.ELITE_SURGE) multiplier *= 1.5;
+        return multiplier;
+    }
+
+    /** Trial Key reward multiplier from the Trial Rank and the Golden modifier. */
+    private double rewardMultiplier() {
+        return (1 + settings().rankRewardBonus * rank) * (has(Modifier.GOLDEN) ? 2 : 1);
+    }
+
+    private int comboWindow() {
+        return has(Modifier.MOMENTUM) ? (int) (settings().comboWindowTicks * 1.5) : settings().comboWindowTicks;
+    }
+
+    private double comboMax() {
+        return settings().comboMax + (has(Modifier.MOMENTUM) ? 1 : 0);
+    }
+
     public PlayerRun run(Player player) {
         return runs.get(player.getUniqueId());
     }
@@ -195,11 +238,14 @@ public final class TrialSession implements BossHost {
         updatePresence(false);
         wave = 1;
         Collection<Player> players = players();
+        rank = partyRank(players);
+        rollModifiers();
         if (settings().titles) {
             Text.title(Audience.audience(players), ominous ? "session-start-title-ominous" : "session-start-title", "session-start-subtitle", 10, 50, 15,
                     Text.ph("waves", settings().finalWave > 0 ? String.valueOf(settings().finalWave) : "∞"),
-                    Text.ph("players", players.size()));
+                    Text.ph("players", players.size()), Text.ph("rank", rankLabel()));
         }
+        announceModifiers(players);
         Fx.sound(players, ominous ? Sound.BLOCK_TRIAL_SPAWNER_OMINOUS_ACTIVATE : Sound.BLOCK_TRIAL_SPAWNER_DETECT_PLAYER, 1f, 0.8f);
         beginWave(false);
     }
@@ -220,11 +266,137 @@ public final class TrialSession implements BossHost {
         state = State.WAVE;
         waveKills = 0;
         waveTarget = settings().killsBase + settings().killsPerExtraPlayer * (playerCount() - 1) + settings().killsPerWave * (wave - 1);
+        rollWaveEvent();
+        if (event == WaveEvent.SWARM) waveTarget = (int) Math.round(waveTarget * 1.5);
+        if (event == WaveEvent.BLITZ) eventTicks = (settings().blitzSeconds + waveTarget * 3) * 20;
+        if (event == WaveEvent.TREASURE) spawnTreasure();
         if (announce && settings().titles) {
-            Text.title(Audience.audience(players), "wave-start-title", "wave-start-subtitle", 5, 35, 10,
-                    Text.ph("wave", Text.roman(wave)), Text.ph("target", waveTarget));
+            if (event != null) {
+                Text.title(Audience.audience(players), "wave-start-title", "wave-event-subtitle", 5, 45, 10,
+                        Text.ph("wave", Text.roman(wave)), Text.ph("event", eventLabel()), Text.ph("description", event.description()));
+            } else {
+                Text.title(Audience.audience(players), "wave-start-title", "wave-start-subtitle", 5, 35, 10,
+                        Text.ph("wave", Text.roman(wave)), Text.ph("target", waveTarget));
+            }
         }
-        if (announce) Fx.sound(players, Sound.EVENT_RAID_HORN, 0.6f, 1.2f);
+        if (event != null) {
+            Component message = Text.prefixed("wave-event", Text.ph("event", eventLabel()), Text.ph("description", event.description()));
+            for (Player player : players) player.sendMessage(message);
+        }
+        if (announce) Fx.sound(players, event != null ? Sound.BLOCK_BELL_RESONATE : Sound.EVENT_RAID_HORN, 0.6f, 1.2f);
+    }
+
+    // ───────────────────────────── Rank, modifiers & events ─────────────────────────────
+
+    /** The party's Trial Rank: the average rank of everyone present when the trial starts. */
+    private int partyRank(Collection<Player> players) {
+        if (!settings().progressionEnabled || players.isEmpty()) return 0;
+        double total = 0;
+        for (Player player : players) total += plugin.stats().rank(player.getUniqueId());
+        return (int) Math.min(settings().maxRank, Math.round(total / players.size()));
+    }
+
+    private String rankLabel() {
+        return rank <= 0 ? "-" : Text.roman(rank);
+    }
+
+    private void rollModifiers() {
+        modifiers.clear();
+        if (!settings().modifiersEnabled) return;
+        int count = Math.min(settings().modifiersMax, settings().modifiersBase + (settings().modifiersPerRanks > 0 ? rank / settings().modifiersPerRanks : 0));
+        List<Modifier> pool = new ArrayList<>();
+        for (Modifier modifier : Modifier.values()) if (!settings().disabledModifiers.contains(modifier.name())) pool.add(modifier);
+        java.util.Collections.shuffle(pool);
+        for (int i = 0; i < Math.min(count, pool.size()); i++) modifiers.add(pool.get(i));
+    }
+
+    private String modifierList() {
+        if (modifiers.isEmpty()) return "<muted>none</muted>";
+        return String.join("<dark_gray>, </dark_gray>", modifiers.stream().map(Modifier::mini).toList());
+    }
+
+    private void announceModifiers(Collection<Player> players) {
+        Component message = Text.parse(Text.raw("prefix") + Text.raw("session-modifiers"),
+                Text.ph("rank", rankLabel()), Text.ph("modifiers", Text.parse(modifierList())));
+        for (Player player : players) player.sendMessage(message);
+    }
+
+    private void rollWaveEvent() {
+        event = null;
+        treasure = null;
+        if (wave < 2 || ThreadLocalRandom.current().nextDouble() >= settings().eventChance) return;
+        List<WaveEvent> pool = new ArrayList<>();
+        for (WaveEvent candidate : WaveEvent.values()) {
+            if (candidate != lastEvent && !settings().disabledEvents.contains(candidate.name())) pool.add(candidate);
+        }
+        if (pool.isEmpty()) return;
+        event = pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
+        lastEvent = event;
+    }
+
+    private String eventLabel() {
+        return event == null ? "" : "<" + event.color() + "><bold>" + event.displayName() + "</bold></" + event.color() + ">";
+    }
+
+    private void spawnTreasure() {
+        Collection<Player> players = players();
+        if (players.isEmpty()) return;
+        List<Location> nearby = new ArrayList<>();
+        for (Location spawner : spawners.keySet()) if (nearPlayers(spawner, 24)) nearby.add(spawner);
+        Location origin = !nearby.isEmpty() ? nearby.get(ThreadLocalRandom.current().nextInt(nearby.size())).clone().add(0.5, 0, 0.5)
+                : players.iterator().next().getLocation();
+        Location location = SessionManager.safeSpotAround(origin, 3);
+        LivingEntity breeze = world.spawn(location, org.bukkit.entity.Breeze.class, CreatureSpawnEvent.SpawnReason.CUSTOM, e -> {
+            e.customName(Text.parse("<gradient:gold:copper><bold>✦ Treasure Breeze ✦</bold></gradient>"));
+            e.setCustomNameVisible(true);
+            e.setGlowing(true);
+            MobScaler.scaleHealth(e, 1.5);
+            Affix.multiply(e, Attribute.MOVEMENT_SPEED, 1.6);
+            de.t14d3.trickiertrials.util.Keys.markTrialMob(e);
+            e.getPersistentDataContainer().set(de.t14d3.trickiertrials.util.Keys.MINION, org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
+        });
+        world.spawnParticle(Particle.WAX_ON, location.clone().add(0, 1, 0), 40, 0.6, 0.8, 0.6, 0.1);
+        Fx.worldSound(location, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.5f, 1.4f);
+        treasure = breeze.getUniqueId();
+        manager.index(breeze, this);
+        eventTicks = settings().treasureSeconds * 20;
+    }
+
+    private void tickEvent() {
+        if (event == null) return;
+        if (event == WaveEvent.BLITZ && eventTicks > 0) {
+            eventTicks -= TICK_INTERVAL;
+            if (eventTicks <= 0) {
+                for (Player player : players()) Text.send(player, "blitz-failed");
+                Fx.sound(players(), Sound.BLOCK_BEACON_DEACTIVATE, 0.8f, 1f);
+            }
+        }
+        if (event == WaveEvent.TREASURE && treasure != null) {
+            eventTicks -= TICK_INTERVAL;
+            Entity breeze = plugin.getServer().getEntity(treasure);
+            if (breeze != null && breeze.isValid()) {
+                world.spawnParticle(Particle.WAX_ON, breeze.getLocation().add(0, 1, 0), 3, 0.3, 0.4, 0.3, 0);
+            }
+            if (eventTicks <= 0 || breeze == null || !breeze.isValid()) {
+                if (breeze != null && breeze.isValid()) {
+                    world.spawnParticle(Particle.GUST_EMITTER_SMALL, breeze.getLocation(), 1);
+                    breeze.remove();
+                }
+                treasure = null;
+                for (Player player : players()) Text.send(player, "treasure-escaped");
+            }
+        }
+    }
+
+    private void tickModifiers() {
+        if (!has(Modifier.DARKNESS)) return;
+        darknessTicks += TICK_INTERVAL;
+        if (darknessTicks < 25 * 20) return;
+        darknessTicks = 0;
+        for (Player player : players()) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 140, 0, false, false, true));
+        }
+        Fx.sound(players(), Sound.AMBIENT_CAVE, 1f, 0.8f);
     }
 
     public void spawnBoss(BossType type, Location location) {
@@ -234,12 +406,18 @@ public final class TrialSession implements BossHost {
         }
         state = State.BOSS;
         lastBoss = type;
-        boss = TrialBoss.spawn(this, type, location, playerCount(), ominous, isFinalWave(wave));
+        double strength = (1 + settings().rankBossHealth * rank) * (has(Modifier.FORTIFIED) ? 1.25 : 1) * (has(Modifier.GOLDEN) ? 1.25 : 1);
+        boss = TrialBoss.spawn(this, type, location, playerCount(), ominous, isFinalWave(wave), strength);
         manager.index(boss.entity(), this);
+        List<Affix> empowered = empowerBoss();
         Collection<Player> players = players();
         for (Player player : players) player.showBossBar(boss.bar());
         if (settings().titles) {
-            Text.title(Audience.audience(players), "boss-incoming-title", "boss-incoming-subtitle", 5, 50, 15, Text.ph("boss", boss.name()));
+            Component affixes = empowered.isEmpty() ? Component.empty()
+                    : Text.parse(" <dark_gray>·</dark_gray> " + String.join(" ", empowered.stream()
+                    .map(a -> "<" + a.color().asHexString() + ">" + a.displayName() + "</" + a.color().asHexString() + ">").toList()));
+            Text.title(Audience.audience(players), "boss-incoming-title", "boss-incoming-subtitle", 5, 50, 15,
+                    Text.ph("boss", boss.name()), Text.ph("affixes", affixes));
         }
         Fx.sound(players, Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.8f, 0.9f);
 
@@ -253,6 +431,23 @@ public final class TrialSession implements BossHost {
                     world.spawnParticle(Particle.OMINOUS_SPAWNING, center, 40, 0.5, 0.8, 0.5, 0.05);
                     Fx.worldSound(center, Sound.BLOCK_TRIAL_SPAWNER_OMINOUS_ACTIVATE, 1.5f, 0.7f);
                 });
+    }
+
+    /** From a configurable Trial Rank on, bosses gain elite affixes (two at twice that rank). */
+    private List<Affix> empowerBoss() {
+        int threshold = settings().bossAffixRank;
+        if (threshold <= 0 || rank < threshold) return List.of();
+        List<Affix> pool = new ArrayList<>(List.of(Affix.SWIFT, Affix.BRUTAL, Affix.VAMPIRIC, Affix.MOLTEN,
+                Affix.FROSTBITE, Affix.VENOMOUS, Affix.SHIELDED, Affix.GALEBORN));
+        pool.removeIf(a -> settings().disabledAffixes.contains(a.name()));
+        java.util.Collections.shuffle(pool);
+        List<Affix> chosen = new ArrayList<>(pool.subList(0, Math.min(rank >= threshold * 2 ? 2 : 1, pool.size())));
+        for (Affix affix : chosen) affix.apply(boss.entity());
+        if (!chosen.isEmpty()) {
+            boss.entity().getPersistentDataContainer().set(de.t14d3.trickiertrials.util.Keys.AFFIXES, org.bukkit.persistence.PersistentDataType.STRING,
+                    String.join(",", chosen.stream().map(Enum::name).toList()));
+        }
+        return chosen;
     }
 
     private BossType pickBossType() {
@@ -300,8 +495,10 @@ public final class TrialSession implements BossHost {
         idleTicks = 0;
 
         for (PlayerRun run : runs.values()) {
-            if (run.combo > 0 && ticks - run.lastKillTick > settings().comboWindowTicks) run.combo = 0;
+            if (run.combo > 0 && ticks - run.lastKillTick > comboWindow()) run.combo = 0;
         }
+        tickModifiers();
+        if (state == State.WAVE) tickEvent();
 
         switch (state) {
             case INTERMISSION -> {
@@ -449,7 +646,7 @@ public final class TrialSession implements BossHost {
         types.retainAll(pool);
         if (types.isEmpty()) types.addAll(pool);
         ThreadLocalRandom random = ThreadLocalRandom.current();
-        MobScaler.Context context = new MobScaler.Context(MobScaler.tierFor(players), wave, playerCount(), ominous);
+        MobScaler.Context context = context(players);
 
         for (int i = 0; i < count; i++) {
             Location origin;
@@ -534,8 +731,11 @@ public final class TrialSession implements BossHost {
                 case WAVE -> {
                     bar.color(ominous ? BossBar.Color.PURPLE : BossBar.Color.BLUE);
                     bar.progress(clamp((double) waveKills / waveTarget));
+                    String label = event == null ? "" : " <dark_gray>·</dark_gray> " + eventLabel()
+                            + (event == WaveEvent.BLITZ && eventTicks > 0 ? " <light>" + (eventTicks + 19) / 20 + "s</light>" : "")
+                            + (event == WaveEvent.TREASURE && treasure != null ? " <light>" + Math.max(0, eventTicks / 20) + "s</light>" : "");
                     bar.name(Text.msg("bossbar-wave", Text.ph("wave", Text.roman(wave)), Text.ph("final", finalSuffix()),
-                            Text.ph("kills", waveKills), Text.ph("target", waveTarget)));
+                            Text.ph("kills", waveKills), Text.ph("target", waveTarget), Text.ph("event", Text.parse(label))));
                 }
                 case INTERMISSION -> {
                     bar.color(BossBar.Color.GREEN);
@@ -583,7 +783,12 @@ public final class TrialSession implements BossHost {
 
     public MobScaler.Context context(Collection<? extends Player> tracked) {
         Collection<? extends Player> basis = tracked.isEmpty() ? players() : tracked;
-        return new MobScaler.Context(MobScaler.tierFor(basis), Math.max(1, wave), playerCount(), ominous);
+        double health = (1 + settings().rankHealth * rank) * (has(Modifier.FORTIFIED) ? 1.4 : 1) * (has(Modifier.GOLDEN) ? 1.25 : 1)
+                * (event == WaveEvent.SWARM ? 0.6 : 1);
+        double damage = (1 + settings().rankDamage * rank) * (has(Modifier.BLOODLUST) ? 1.25 : 1);
+        double speed = (has(Modifier.FRENZY) ? 1.2 : 1) * (event == WaveEvent.SWARM ? 1.15 : 1);
+        double elite = settings().rankElite * rank + (has(Modifier.ELITE_HUNT) ? 0.25 : 0) + (event == WaveEvent.ELITE_SURGE ? 0.7 : 0);
+        return new MobScaler.Context(MobScaler.tierFor(basis), Math.max(1, wave), playerCount(), ominous, health, damage, speed, elite);
     }
 
     public void registerMob(LivingEntity entity) {
@@ -604,15 +809,26 @@ public final class TrialSession implements BossHost {
             bossDefeated(killer);
             return;
         }
+        if (entity.getUniqueId().equals(treasure)) {
+            treasure = null;
+            treasureCaught(entity.getLocation(), killer);
+            return;
+        }
+        if (has(Modifier.UNSTABLE) && ThreadLocalRandom.current().nextDouble() < 0.25) {
+            Location at = entity.getLocation();
+            world.spawnParticle(Particle.SMOKE, at.clone().add(0, 0.5, 0), 20, 0.3, 0.3, 0.3, 0.02);
+            Fx.worldSound(at, Sound.ENTITY_CREEPER_PRIMED, 1f, 1.3f);
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> world.createExplosion(null, at, 1.8f, false, false), 20L);
+        }
 
         if (killer != null) {
             PlayerRun run = runs.computeIfAbsent(killer.getUniqueId(), id -> new PlayerRun(id, killer.getName()));
-            run.combo = ticks - run.lastKillTick <= settings().comboWindowTicks ? run.combo + 1 : 1;
+            run.combo = ticks - run.lastKillTick <= comboWindow() ? run.combo + 1 : 1;
             run.lastKillTick = ticks;
             run.bestCombo = Math.max(run.bestCombo, run.combo);
             run.kills++;
             int base = elite ? settings().scoreElite : settings().scoreKill;
-            long points = Math.round(base * run.multiplier(settings().comboPerKill, settings().comboMax));
+            long points = Math.round(base * run.multiplier(settings().comboPerKill, comboMax()) * scoreMultiplier());
             addScore(run, points);
             Fx.sound(killer, Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, (float) Math.min(2.0, 0.8 + run.combo * 0.06));
             if (elite) {
@@ -636,6 +852,20 @@ public final class TrialSession implements BossHost {
         }
     }
 
+    private void treasureCaught(Location at, Player killer) {
+        ItemStack keys = new ItemStack(org.bukkit.Material.TRIAL_KEY, Math.max(1, (int) Math.round(playerCount() * rewardMultiplier())));
+        dropStacks(at, keys);
+        world.spawnParticle(Particle.WAX_ON, at.clone().add(0, 1, 0), 60, 0.8, 0.8, 0.8, 0.2);
+        Fx.sound(players(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.6f);
+        Component message = Text.prefixed("treasure-caught", Text.ph("player", killer != null ? killer.getName() : "the chamber"),
+                Text.ph("keys", keys.getAmount()));
+        for (Player player : players()) player.sendMessage(message);
+        if (killer != null) {
+            PlayerRun run = runs.computeIfAbsent(killer.getUniqueId(), id -> new PlayerRun(id, killer.getName()));
+            addScore(run, Math.round(settings().scoreElite * 2 * scoreMultiplier()));
+        }
+    }
+
     private void addScore(PlayerRun run, long points) {
         run.score = Math.max(0, run.score + points);
         teamScore = Math.max(0, teamScore + points);
@@ -643,11 +873,26 @@ public final class TrialSession implements BossHost {
 
     private void waveCleared() {
         Collection<Player> players = players();
+        boolean blitzWon = event == WaveEvent.BLITZ && eventTicks > 0;
+        long clearPoints = Math.round(settings().scoreWaveClear * scoreMultiplier() * (blitzWon ? 2 : 1));
         for (Player player : players) {
             PlayerRun run = runs.get(player.getUniqueId());
-            if (run != null) addScore(run, settings().scoreWaveClear);
-            heal(player, settings().waveClearHeal);
+            if (run != null) addScore(run, clearPoints);
+            if (!has(Modifier.FAMINE)) heal(player, settings().waveClearHeal);
+            if (blitzWon) {
+                for (Settings.Reward reward : settings().blitzRewards) {
+                    ItemStack item = reward.roll(has(Modifier.GOLDEN) ? 2 : 1);
+                    if (item != null) player.getInventory().addItem(item).values().forEach(left -> world.dropItemNaturally(player.getLocation(), left));
+                }
+                Text.send(player, "blitz-won");
+            }
         }
+        if (treasure != null) {
+            Entity breeze = plugin.getServer().getEntity(treasure);
+            if (breeze != null) breeze.remove();
+            treasure = null;
+        }
+        event = null;
         if (isFinalWave(wave)) {
             victory();
             return;
@@ -656,7 +901,7 @@ public final class TrialSession implements BossHost {
         intermissionTicks = settings().intermission * 20;
         if (settings().titles) {
             Text.title(Audience.audience(players), "wave-clear-title", "wave-clear-subtitle", 5, 35, 10,
-                    Text.ph("points", settings().scoreWaveClear), Text.ph("seconds", settings().intermission));
+                    Text.ph("points", clearPoints), Text.ph("seconds", settings().intermission));
         }
         Fx.sound(players, Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1.2f);
         for (Player player : players) {
@@ -682,7 +927,7 @@ public final class TrialSession implements BossHost {
         Location location = defeated.entity().getLocation();
         Collection<Player> players = players();
         double multiplier = playerCount();
-        for (Settings.Reward reward : settings().bossRewards) dropStacks(location, reward.roll(multiplier));
+        for (Settings.Reward reward : settings().bossRewards) dropStacks(location, reward.roll(multiplier * (has(Modifier.GOLDEN) ? 2 : 1)));
         int experience = (int) (settings().bossExperience * multiplier);
         while (experience > 0) {
             int orb = Math.min(experience, 25);
@@ -701,7 +946,7 @@ public final class TrialSession implements BossHost {
             PlayerRun run = runs.get(player.getUniqueId());
             if (run == null) continue;
             run.bosses++;
-            addScore(run, settings().scoreBoss);
+            addScore(run, Math.round(settings().scoreBoss * scoreMultiplier()));
         }
         if (settings().titles) {
             Text.title(Audience.audience(players), "boss-defeated-title", "boss-defeated-subtitle", 5, 50, 15, Text.ph("boss", defeated.name()));
@@ -735,9 +980,9 @@ public final class TrialSession implements BossHost {
         Collection<Player> players = players();
         for (Player player : players) {
             PlayerRun run = runs.get(player.getUniqueId());
-            if (run != null) addScore(run, settings().scoreVictory);
+            if (run != null) addScore(run, Math.round(settings().scoreVictory * scoreMultiplier()));
             for (Settings.Reward reward : settings().victoryRewards) {
-                ItemStack item = reward.roll(1);
+                ItemStack item = reward.roll(rewardMultiplier());
                 if (item == null) continue;
                 player.getInventory().addItem(item).values().forEach(left -> world.dropItemNaturally(player.getLocation(), left));
             }
@@ -782,7 +1027,7 @@ public final class TrialSession implements BossHost {
         int reached = Math.max(1, wave);
         PlayerRun mvp = runs.values().stream().max(Comparator.comparingLong(r -> r.score)).orElse(null);
         for (PlayerRun run : runs.values()) {
-            List<String> records = plugin.stats().record(run, reached, victory);
+            List<String> records = plugin.stats().record(run, reached, victory, settings().progressionEnabled ? settings().maxRank : 0);
             Player player = plugin.getServer().getPlayer(run.uuid);
             if (player == null || !announce) continue;
             if (!victory) Text.send(player, "abandoned", Text.ph("wave", Text.roman(reached)));
@@ -797,10 +1042,20 @@ public final class TrialSession implements BossHost {
                     Text.ph("bosses", run.bosses),
                     Text.ph("best_combo", run.bestCombo),
                     Text.ph("deaths", run.deaths),
-                    Text.ph("mvp", mvp == null ? "-" : mvp.name)
+                    Text.ph("mvp", mvp == null ? "-" : mvp.name),
+                    Text.ph("rank", rankLabel()),
+                    Text.ph("modifiers", Text.parse(modifierList()))
             };
             for (String line : plugin.getConfig().getStringList("messages.summary")) player.sendMessage(Text.parse(line, resolvers));
-            for (String record : records) Text.send(player, "new-record", Text.ph("what", record));
+            for (String record : records) {
+                if (record.startsWith("RANK:")) {
+                    int newRank = Integer.parseInt(record.substring(5));
+                    Text.send(player, "rank-up", Text.ph("rank", Text.roman(newRank)));
+                    if (settings().titles) Text.title(player, "rank-up-title", "rank-up-subtitle", 10, 60, 20, Text.ph("rank", Text.roman(newRank)));
+                } else {
+                    Text.send(player, "new-record", Text.ph("what", record));
+                }
+            }
         }
         plugin.stats().saveAsync();
     }

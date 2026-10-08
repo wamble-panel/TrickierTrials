@@ -23,7 +23,8 @@ public final class StatsStore {
         WAVE("best-wave", "Highest wave"),
         KILLS("kills", "Total kills"),
         BOSSES("bosses", "Bosses slain"),
-        VICTORIES("victories", "Chambers conquered");
+        VICTORIES("victories", "Chambers conquered"),
+        RANK("rank", "Trial Rank");
 
         public final String path;
         public final String label;
@@ -59,7 +60,20 @@ public final class StatsStore {
     }
 
     /** Records a finished run. Returns the descriptions of any personal bests that were beaten. */
-    public List<String> record(PlayerRun run, int wave, boolean victory) {
+    public int rank(UUID uuid) {
+        ConfigurationSection s = data.getConfigurationSection("players." + uuid);
+        return s == null ? 0 : s.getInt("rank");
+    }
+
+    public void setRank(UUID uuid, String name, int rank) {
+        ConfigurationSection s = section(uuid);
+        if (name != null) s.set("name", name);
+        s.set("rank", Math.max(0, rank));
+        dirty = true;
+    }
+
+    /** Records a finished run; a victory raises the player's Trial Rank by one (up to {@code maxRank}). */
+    public List<String> record(PlayerRun run, int wave, boolean victory, int maxRank) {
         ConfigurationSection s = section(run.uuid);
         List<String> records = new ArrayList<>();
         s.set("name", run.name);
@@ -74,6 +88,10 @@ public final class StatsStore {
         s.set("deaths", s.getLong("deaths") + run.deaths);
         s.set("runs", s.getInt("runs") + 1);
         if (victory) s.set("victories", s.getInt("victories") + 1);
+        if (victory && s.getInt("rank") < maxRank) {
+            s.set("rank", s.getInt("rank") + 1);
+            records.add(0, "RANK:" + s.getInt("rank"));
+        }
         dirty = true;
         return records;
     }

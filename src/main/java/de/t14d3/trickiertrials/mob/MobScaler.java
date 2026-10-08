@@ -45,8 +45,16 @@ public final class MobScaler {
         }
     }
 
-    /** Everything that influences how strong a freshly spawned mob is. */
-    public record Context(Tier tier, int wave, int players, boolean ominous) {
+    /**
+     * Everything that influences how strong a freshly spawned mob is. The multipliers come from the party's
+     * Trial Rank, run modifiers and wave events.
+     */
+    public record Context(Tier tier, int wave, int players, boolean ominous,
+                          double healthMultiplier, double damageMultiplier, double speedMultiplier, double eliteBonus) {
+
+        public Context(Tier tier, int wave, int players, boolean ominous) {
+            this(tier, wave, players, ominous, 1, 1, 1, 0);
+        }
     }
 
     private static final EquipmentSlot[] ARMOR_SLOTS = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
@@ -108,8 +116,11 @@ public final class MobScaler {
         Tier tier = settings.gearScaling ? context.tier() : Tier.DEFAULT;
         int extraPlayers = Math.max(0, context.players() - 1);
         int waveIndex = Math.max(0, context.wave() - 1);
-        double health = tier.health * (1 + settings.healthPerWave * waveIndex) * (1 + settings.healthPerExtraPlayer * extraPlayers);
-        double damage = tier.damage * (1 + settings.damagePerWave * waveIndex) * (1 + settings.damagePerExtraPlayer * extraPlayers);
+        double health = tier.health * (1 + settings.healthPerWave * waveIndex) * (1 + settings.healthPerExtraPlayer * extraPlayers)
+                * context.healthMultiplier();
+        double damage = tier.damage * (1 + settings.damagePerWave * waveIndex) * (1 + settings.damagePerExtraPlayer * extraPlayers)
+                * context.damageMultiplier();
+        if (context.speedMultiplier() != 1) Affix.multiply(entity, Attribute.MOVEMENT_SPEED, context.speedMultiplier());
 
         if (settings.strengthenMobs) {
             equip(entity, tier);
@@ -118,7 +129,7 @@ public final class MobScaler {
         List<Affix> affixes = allowElite ? rollAffixes(context, settings) : Collections.emptyList();
         if (!affixes.isEmpty()) health *= 1 + settings.eliteHealthBonus;
 
-        if (settings.strengthenMobs || !affixes.isEmpty()) {
+        if (settings.strengthenMobs || !affixes.isEmpty() || context.healthMultiplier() != 1 || context.damageMultiplier() != 1) {
             scaleHealth(entity, health);
             Affix.multiply(entity, Attribute.ATTACK_DAMAGE, damage);
         }
@@ -152,7 +163,8 @@ public final class MobScaler {
         ThreadLocalRandom random = ThreadLocalRandom.current();
         double chance = settings.eliteBaseChance + settings.eliteChancePerWave * Math.max(0, context.wave() - 1);
         if (context.ominous()) chance += settings.eliteOminousBonus;
-        if (random.nextDouble() >= Math.min(settings.eliteMaxChance, chance)) return Collections.emptyList();
+        chance += context.eliteBonus();
+        if (random.nextDouble() >= Math.min(settings.eliteMaxChance + context.eliteBonus(), chance)) return Collections.emptyList();
 
         List<Affix> pool = new ArrayList<>(Arrays.stream(Affix.values()).filter(a -> !settings.disabledAffixes.contains(a.name())).toList());
         if (pool.isEmpty()) return Collections.emptyList();

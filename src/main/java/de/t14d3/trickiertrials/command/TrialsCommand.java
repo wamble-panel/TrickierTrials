@@ -4,6 +4,7 @@ import de.t14d3.trickiertrials.TrickierTrials;
 import de.t14d3.trickiertrials.boss.BossType;
 import de.t14d3.trickiertrials.guard.GuardManager;
 import de.t14d3.trickiertrials.guard.Warden;
+import de.t14d3.trickiertrials.session.Modifier;
 import de.t14d3.trickiertrials.session.TrialSession;
 import de.t14d3.trickiertrials.stats.StatsStore;
 import de.t14d3.trickiertrials.util.Text;
@@ -46,6 +47,7 @@ public final class TrialsCommand implements TabExecutor {
             case "top" -> top(sender, args.length > 1 ? args[1] : "score");
             case "boss" -> boss(sender, args);
             case "warden" -> warden(sender, args);
+            case "rank" -> rank(sender, args);
             case "end" -> {
                 if (!checkAdmin(sender)) return true;
                 if (!(sender instanceof Player player)) {
@@ -92,7 +94,10 @@ public final class TrialsCommand implements TabExecutor {
                 Text.ph("players", session.players().size()),
                 Text.ph("score", Text.number(session.teamScore())),
                 Text.ph("time", Text.duration(session.elapsed())),
-                Text.ph("ominous", session.ominous() ? Text.parse(" <dark_gray>·</dark_gray> <ominous>Ominous</ominous>") : Component.empty()));
+                Text.ph("ominous", session.ominous() ? Text.parse(" <dark_gray>·</dark_gray> <ominous>Ominous</ominous>") : Component.empty()),
+                Text.ph("rank", session.rank() <= 0 ? "-" : Text.roman(session.rank())),
+                Text.ph("modifiers", Text.parse(session.modifiers().isEmpty() ? "<muted>none</muted>"
+                        : String.join("<dark_gray>, </dark_gray>", session.modifiers().stream().map(Modifier::mini).toList()))));
     }
 
     private void stats(CommandSender sender, String target) {
@@ -116,7 +121,8 @@ public final class TrialsCommand implements TabExecutor {
                     Text.ph("bosses", Text.number(s.getLong("bosses"))),
                     Text.ph("victories", s.getInt("victories")),
                     Text.ph("runs", s.getInt("runs")),
-                    Text.ph("best_combo", s.getInt("best-combo"))));
+                    Text.ph("best_combo", s.getInt("best-combo")),
+                    Text.ph("rank", s.getInt("rank") <= 0 ? "-" : Text.roman(s.getInt("rank")))));
         }
     }
 
@@ -132,7 +138,8 @@ public final class TrialsCommand implements TabExecutor {
         for (int i = 0; i < entries.size(); i++) {
             StatsStore.Entry entry = entries.get(i);
             String color = i < RANK_COLORS.length ? RANK_COLORS[i] : "muted";
-            String value = category == StatsStore.Category.WAVE ? Text.roman((int) entry.value()) : Text.number(entry.value());
+            String value = category == StatsStore.Category.WAVE || category == StatsStore.Category.RANK
+                    ? Text.roman((int) entry.value()) : Text.number(entry.value());
             sender.sendMessage(Text.parse(Text.raw("top-entry").replace("<rank_color>", "<" + color + ">").replace("</rank_color>", "</" + color + ">"),
                     Text.ph("rank", i + 1), Text.ph("name", entry.name()), Text.ph("value", value)));
         }
@@ -151,6 +158,28 @@ public final class TrialsCommand implements TabExecutor {
             return;
         }
         if (plugin.sessions().summonBoss(player, type) == null) Text.send(sender, "not-in-session");
+    }
+
+    /** /trials rank <player> <rank> - set a player's Trial Rank. */
+    private void rank(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return;
+        if (args.length < 3) {
+            Text.send(sender, "rank-usage");
+            return;
+        }
+        org.bukkit.OfflinePlayer target = plugin.getServer().getOfflinePlayerIfCached(args[1]);
+        if (target == null) {
+            Text.send(sender, "unknown-player", Text.ph("name", args[1]));
+            return;
+        }
+        try {
+            int value = Math.max(0, Math.min(plugin.settings().maxRank, Integer.parseInt(args[2])));
+            plugin.stats().setRank(target.getUniqueId(), target.getName(), value);
+            plugin.stats().saveAsync();
+            Text.send(sender, "rank-set", Text.ph("name", args[1]), Text.ph("rank", value <= 0 ? "-" : Text.roman(value)));
+        } catch (NumberFormatException e) {
+            Text.send(sender, "rank-usage");
+        }
     }
 
     private void warden(CommandSender sender, String[] args) {
@@ -225,12 +254,12 @@ public final class TrialsCommand implements TabExecutor {
         List<String> options = new ArrayList<>();
         if (args.length == 1) {
             options.addAll(List.of("info", "stats", "top"));
-            if (sender.hasPermission(ADMIN)) options.addAll(List.of("boss", "warden", "end", "reload"));
+            if (sender.hasPermission(ADMIN)) options.addAll(List.of("boss", "warden", "rank", "end", "reload"));
         } else if (args.length == 2) {
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "top" -> Arrays.stream(StatsStore.Category.values()).forEach(c -> options.add(c.name().toLowerCase(Locale.ROOT)));
                 case "boss" -> Arrays.stream(BossType.values()).forEach(b -> options.add(b.id()));
-                case "stats" -> plugin.getServer().getOnlinePlayers().forEach(p -> options.add(p.getName()));
+                case "stats", "rank" -> plugin.getServer().getOnlinePlayers().forEach(p -> options.add(p.getName()));
                 case "warden" -> options.addAll(List.of("create", "point", "clearpoints", "respawn", "open", "remove", "list"));
                 default -> {
                 }

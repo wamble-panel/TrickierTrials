@@ -27,6 +27,25 @@ the whole structure. For a custom-built chamber, it is the area around the spawn
   scale with the number of players in the encounter.
 - **Ominous chambers.** Ominous spawners make bosses stronger and elites more common.
 
+### Built for replaying
+- **Trial Rank (0-10).** Each conquered chamber raises a player's rank by one. A group plays at its
+  members' average rank. Every rank adds mob health, damage and elite chance, plus boss health.
+  From rank 3, bosses gain elite affixes (two from rank 6). In return, victories give more Trial
+  Keys and more score. Veterans can't steamroll, and new players aren't crushed when they play
+  together.
+- **Run modifiers.** Every trial rolls modifiers, starting at 1 and gaining one per 3 ranks, up to 4.
+  The pool is Bloodlust, Fortified, Frenzy, Elite Hunt, Gale, Leeching, Glass Cannon, Darkness,
+  Famine, Unstable, Momentum and Golden Trial (double keys). Harder modifiers give more score.
+  Hover over a modifier in chat to see what it does.
+- **Wave events.** From wave 2, a normal wave has a 35% chance to become a special wave:
+  - **Elite Surge**: elites everywhere, +50% score.
+  - **Swarm**: 1.5x more foes that are weaker and faster.
+  - **Blitz**: beat the timer for a Trial Key.
+  - **Treasure Breeze**: kill the fleeing breeze for Trial Keys.
+- **Large groups.** Everything scales with player count. A boss whose health would pass Minecraft's
+  1024 cap takes reduced damage instead, so it stays a real fight for 15+ players. Boss minions are
+  capped to protect server performance.
+
 ### Only trial chamber mobs
 Everything the plugin spawns is a mob that vanilla trial spawners also spawn: Breeze, Bogged,
 Zombie, Husk, Skeleton, Stray, Spider, Cave Spider, Slime and Silverfish. Reinforcements copy the
@@ -93,7 +112,7 @@ the Paper API and no longer needs server internals.
 |---------|-------------|------------|
 | `/trials info` | Shows your current encounter | – |
 | `/trials stats [player]` | Shows personal records | – |
-| `/trials top [score\|wave\|kills\|bosses\|victories]` | Shows the leaderboard | – |
+| `/trials top [score\|wave\|kills\|bosses\|victories\|rank]` | Shows the leaderboard | – |
 | `/trials boss <type>` | Summons a boss in your encounter, or starts an encounter if you're not in one | `trickiertrials.admin` |
 | `/trials warden create <name>` | Creates a Warden with its post at your position | `trickiertrials.admin` |
 | `/trials warden point <name>` | Adds your position as a patrol point | `trickiertrials.admin` |
@@ -101,6 +120,7 @@ the Paper API and no longer needs server internals.
 | `/trials warden respawn <name>` | Brings the Warden back and seals the trials now | `trickiertrials.admin` |
 | `/trials warden open <name>` | Opens the trials without a fight (for testing) | `trickiertrials.admin` |
 | `/trials warden remove <name>` / `list` | Deletes a Warden or lists all Wardens | `trickiertrials.admin` |
+| `/trials rank <player> <0-10>` | Sets a player's Trial Rank | `trickiertrials.admin` |
 | `/trials end` | Ends your encounter | `trickiertrials.admin` |
 | `/trials reload` | Reloads the config | `trickiertrials.admin` |
 
