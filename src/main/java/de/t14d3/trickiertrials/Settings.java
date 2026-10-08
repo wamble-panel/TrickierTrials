@@ -233,17 +233,17 @@ public final class Settings {
         broadcastVictories = c.getBoolean("session.broadcast-victories", true);
 
         progressionEnabled = c.getBoolean("progression.enabled", true);
-        maxRank = Math.max(0, c.getInt("progression.max-rank", 10));
-        rankHealth = c.getDouble("progression.health-per-rank", 0.08);
-        rankDamage = c.getDouble("progression.damage-per-rank", 0.05);
-        rankElite = c.getDouble("progression.elite-chance-per-rank", 0.03);
-        rankBossHealth = c.getDouble("progression.boss-health-per-rank", 0.10);
-        bossAffixRank = c.getInt("progression.boss-affix-rank", 3);
-        rankRewardBonus = c.getDouble("progression.reward-bonus-per-rank", 0.25);
-        rankScoreBonus = c.getDouble("progression.score-bonus-per-rank", 0.10);
+        maxRank = Math.max(0, c.getInt("progression.max-rank", 20));
+        rankHealth = c.getDouble("progression.health-per-rank", 0.05);
+        rankDamage = c.getDouble("progression.damage-per-rank", 0.03);
+        rankElite = c.getDouble("progression.elite-chance-per-rank", 0.015);
+        rankBossHealth = c.getDouble("progression.boss-health-per-rank", 0.06);
+        bossAffixRank = c.getInt("progression.boss-affix-rank", 5);
+        rankRewardBonus = c.getDouble("progression.reward-bonus-per-rank", 0.15);
+        rankScoreBonus = c.getDouble("progression.score-bonus-per-rank", 0.06);
         modifiersEnabled = c.getBoolean("modifiers.enabled", true);
         modifiersBase = Math.max(0, c.getInt("modifiers.base", 1));
-        modifiersPerRanks = c.getInt("modifiers.extra-every-ranks", 3);
+        modifiersPerRanks = c.getInt("modifiers.extra-every-ranks", 5);
         modifiersMax = Math.max(0, c.getInt("modifiers.max", 4));
         for (String name : c.getStringList("modifiers.disabled")) disabledModifiers.add(name.toUpperCase(Locale.ROOT).replace('-', '_'));
         eventChance = c.getDouble("wave-events.chance", 0.35);

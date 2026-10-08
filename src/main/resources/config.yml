@@ -7,7 +7,7 @@
 # Every palette colour below can be used as a tag (<copper>text</copper>) and inside
 # gradients (<gradient:copper:gold>text</gradient>).
 
-config-version: 2
+config-version: 3
 
 palette:
   copper: "#E8875B"   # warm copper - main accent
@@ -165,14 +165,42 @@ bosses:
 # its members, so veterans always face a harder (and more rewarding) trial than newcomers.
 progression:
   enabled: true
-  max-rank: 10
-  health-per-rank: 0.08          # +8% mob health per rank
-  damage-per-rank: 0.05          # +5% mob damage per rank
-  elite-chance-per-rank: 0.03
-  boss-health-per-rank: 0.10
-  boss-affix-rank: 3             # bosses gain an elite affix from this rank (two at double). 0 = never
-  reward-bonus-per-rank: 0.25    # victory Trial Keys x(1 + 0.25 per rank)
-  score-bonus-per-rank: 0.10
+  max-rank: 20
+  health-per-rank: 0.05          # +5% mob health per rank (rank 20 = +100%)
+  damage-per-rank: 0.03          # +3% mob damage per rank (rank 20 = +60%)
+  elite-chance-per-rank: 0.015
+  boss-health-per-rank: 0.06
+  boss-affix-rank: 5             # bosses gain an elite affix from this rank (two at double). 0 = never
+  reward-bonus-per-rank: 0.15    # victory Trial Keys x(1 + 0.15 per rank)
+  score-bonus-per-rank: 0.06
+
+# Star badge for every rank (index = rank, 0-20). &#RRGGBB colours. Shown in /trials and through
+# the PlaceholderAPI placeholders %trickiertrials_rank_stars% / %trickiertrials_rank_stars_hex%.
+rank-badges:
+  - "&#7A7A7A☆"                        # 0  unranked
+  - "&#CD7F32★"                        # 1  Bronze
+  - "&#CD7F32★★"                       # 2
+  - "&#CD7F32★★★"                      # 3
+  - "&#C0C0C0★&#CD7F32★★"              # 4  Silver
+  - "&#C0C0C0★★&#CD7F32★"              # 5
+  - "&#C0C0C0★★★"                      # 6
+  - "&#FFD700★&#C0C0C0★★"              # 7  Gold
+  - "&#FFD700★★&#C0C0C0★"              # 8
+  - "&#FFD700★★★"                      # 9
+  - "&#50C878★&#FFD700★★"              # 10 Emerald
+  - "&#50C878★★&#FFD700★"              # 11
+  - "&#50C878★★★"                      # 12
+  - "&#5CE1E6★&#50C878★★"              # 13 Diamond
+  - "&#5CE1E6★★&#50C878★"              # 14
+  - "&#5CE1E6★★★"                      # 15
+  - "&#E8B4FF★&#5CE1E6★★"              # 16 Crystal
+  - "&#E8B4FF★★&#5CE1E6★"              # 17
+  - "&#E8B4FF★★★"                      # 18
+  - "&#E8B4FF✦&#FFFFFF✦&#E8B4FF✦"      # 19 Crystal sparkle
+  - "&#FF7EB3✪&#B47EFF✪&#7EE0FF✪"      # 20 max rank
+# Tier name for every rank (index = rank), for %trickiertrials_rank_tier%.
+rank-tiers: [Unranked, Bronze, Bronze, Bronze, Silver, Silver, Silver, Gold, Gold, Gold,
+             Emerald, Emerald, Emerald, Diamond, Diamond, Diamond, Crystal, Crystal, Crystal, Crystal, Prismatic]
 
 # ─────────────────────────────── Run modifiers ──────────────────────────────
 # Random twists rolled for every trial so no two runs are alike: BLOODLUST, FORTIFIED, FRENZY,
@@ -180,7 +208,7 @@ progression:
 modifiers:
   enabled: true
   base: 1                        # modifiers every trial gets
-  extra-every-ranks: 3           # +1 modifier per this many Trial Ranks
+  extra-every-ranks: 5           # +1 modifier per this many Trial Ranks
   max: 4
   disabled: []
 
@@ -263,7 +291,7 @@ messages:
     - "<copper>/trials info</copper> <muted>- your current encounter</muted>"
     - "<copper>/trials stats [player]</copper> <muted>- personal records</muted>"
     - "<copper>/trials top [score|wave|kills|bosses|victories|rank]</copper> <muted>- leaderboard</muted>"
-    - "<copper>/trials rank <player> <0-10></copper> <muted>- set a Trial Rank (admin)</muted>"
+    - "<copper>/trials rank <player> <0-20></copper> <muted>- set a Trial Rank (admin)</muted>"
     - "<copper>/trials boss <type></copper> <muted>- summon a boss (admin)</muted>"
     - "<copper>/trials warden <create|point|respawn|open|remove|list> <name></copper> <muted>- chamber guard (admin)</muted>"
     - "<copper>/trials end</copper> <muted>- end your encounter (admin)</muted>"
@@ -271,8 +299,8 @@ messages:
 
   # Encounter flow
   session-start-title: "<gradient:copper:gold><bold>TRIAL BEGINS</bold></gradient>"
-  session-start-subtitle: "<muted>Rank <gold><rank></gold> · Survive <light><waves></light> waves · <light><players></light> challenger(s)</muted>"
-  session-modifiers: "<muted>Trial Rank</muted> <gold><rank></gold> <dark_gray>·</dark_gray> <muted>Modifiers:</muted> <modifiers> <dark_gray>(hover)</dark_gray>"
+  session-start-subtitle: "<muted>Rank</muted> <stars> <muted>· Survive <light><waves></light> waves · <light><players></light> challenger(s)</muted>"
+  session-modifiers: "<muted>Trial Rank</muted> <stars> <dark_gray>·</dark_gray> <muted>Modifiers:</muted> <modifiers> <dark_gray>(hover)</dark_gray>"
   session-start-title-ominous: "<gradient:ominous:danger><bold>OMINOUS TRIAL</bold></gradient>"
   session-join: "<light><player></light> <muted>entered the trial on wave</muted> <teal><wave></teal>"
   wave-start-title: "<gradient:teal:sky><bold>WAVE <wave></bold></gradient>"
@@ -291,11 +319,11 @@ messages:
   blitz-failed: "<danger>Blitz failed</danger> <muted>- the timer ran out.</muted>"
   treasure-caught: "<gold>✦</gold> <light><player></light> <muted>caught the Treasure Breeze!</muted> <gold><keys> Trial Key(s)</gold> <muted>dropped.</muted>"
   treasure-escaped: "<muted>The Treasure Breeze escaped...</muted>"
-  rank-up: "<gradient:gold:copper><bold>RANK UP!</bold></gradient> <muted>You are now Trial Rank</muted> <gold><rank></gold><muted>. Trials will be harder - and more rewarding.</muted>"
+  rank-up: "<gradient:gold:copper><bold>RANK UP!</bold></gradient> <muted>You are now Trial Rank</muted> <stars> <gold><rank></gold><muted>. Trials will be harder - and more rewarding.</muted>"
   rank-up-title: "<gradient:gold:copper><bold>TRIAL RANK <rank></bold></gradient>"
-  rank-up-subtitle: "<muted>The chambers grow more dangerous</muted>"
-  rank-set: "<success>Set <light><name></light>'s Trial Rank to <gold><rank></gold>.</success>"
-  rank-usage: "<muted>Usage:</muted> <copper>/trials rank <player> <0-10></copper>"
+  rank-up-subtitle: "<stars>"
+  rank-set: "<success>Set <light><name></light>'s Trial Rank to</success> <stars> <gold><rank></gold>"
+  rank-usage: "<muted>Usage:</muted> <copper>/trials rank <player> <0-20></copper>"
   reinforcements: "<ominous>The chamber stirs...</ominous> <muted>reinforcements arrive!</muted>"
   spawners-awaken: "<teal>The trial spawners awaken...</teal> <muted>more foes are coming!</muted>"
   player-fallen: "<danger>☠</danger> <light><player></light> <muted>has fallen on wave</muted> <teal><wave></teal> <danger>(-<penalty>)</danger>"
@@ -324,7 +352,7 @@ messages:
     - " <muted>Wave reached</muted> <teal><wave></teal> <dark_gray>·</dark_gray> <muted>Time</muted> <light><time></light> <dark_gray>·</dark_gray> <muted>Team score</muted> <gold><team_score></gold>"
     - " <muted>Your score</muted> <gold><score></gold> <dark_gray>·</dark_gray> <muted>Kills</muted> <light><kills></light> <dark_gray>·</dark_gray> <muted>Elites</muted> <light><elites></light> <dark_gray>·</dark_gray> <muted>Bosses</muted> <light><bosses></light>"
     - " <muted>Best combo</muted> <copper><best_combo>x</copper> <dark_gray>·</dark_gray> <muted>Deaths</muted> <danger><deaths></danger> <dark_gray>·</dark_gray> <muted>MVP</muted> <gold><mvp></gold>"
-    - " <muted>Rank</muted> <gold><rank></gold> <dark_gray>·</dark_gray> <muted>Modifiers:</muted> <modifiers>"
+    - " <muted>Rank</muted> <stars> <dark_gray>·</dark_gray> <muted>Modifiers:</muted> <modifiers>"
     - "<dark_gray><strikethrough>                                                  </strikethrough></dark_gray>"
   summary-victory: "<gradient:gold:copper><bold>✦ CHAMBER CONQUERED ✦</bold></gradient>"
   summary-abandoned: "<gradient:muted:light><bold>TRIAL ENDED</bold></gradient>"
@@ -335,11 +363,11 @@ messages:
     - " <muted>Best score</muted> <gold><best_score></gold> <dark_gray>·</dark_gray> <muted>Best wave</muted> <teal><best_wave></teal>"
     - " <muted>Kills</muted> <light><kills></light> <dark_gray>·</dark_gray> <muted>Elites</muted> <light><elites></light> <dark_gray>·</dark_gray> <muted>Bosses</muted> <light><bosses></light>"
     - " <muted>Conquered</muted> <success><victories></success><muted>/<runs> runs</muted> <dark_gray>·</dark_gray> <muted>Best combo</muted> <copper><best_combo>x</copper>"
-    - " <muted>Trial Rank</muted> <gold><rank></gold>"
+    - " <muted>Trial Rank</muted> <stars> <gold><rank></gold>"
   top-header: "<gradient:copper:gold><bold>Trial Leaderboard</bold></gradient> <muted>· <category></muted>"
-  top-entry: " <rank_color>#<rank></rank_color> <light><name></light> <dark_gray>-</dark_gray> <gold><value></gold>"
+  top-entry: " <rank_color>#<rank></rank_color> <light><name></light> <dark_gray>-</dark_gray> <value>"
   top-empty: "<muted>No runs recorded yet. Go conquer a chamber!</muted>"
-  info: "<muted>Wave</muted> <teal><wave></teal><muted><final></muted> <dark_gray>·</dark_gray> <muted>Rank</muted> <gold><rank></gold> <dark_gray>·</dark_gray> <muted>Players</muted> <light><players></light> <dark_gray>·</dark_gray> <muted>Team score</muted> <gold><score></gold> <dark_gray>·</dark_gray> <muted>Time</muted> <light><time></light><ominous><newline><muted>Modifiers:</muted> <modifiers>"
+  info: "<muted>Wave</muted> <teal><wave></teal><muted><final></muted> <dark_gray>·</dark_gray> <muted>Rank</muted> <stars> <dark_gray>·</dark_gray> <muted>Players</muted> <light><players></light> <dark_gray>·</dark_gray> <muted>Team score</muted> <gold><score></gold> <dark_gray>·</dark_gray> <muted>Time</muted> <light><time></light><ominous><newline><muted>Modifiers:</muted> <modifiers>"
 
   # Chamber Warden
   warden-sealed: "<ominous>⚔</ominous> <warden> <muted>guards these trials - defeat it to unseal them</muted>"

@@ -8,6 +8,7 @@ import de.t14d3.trickiertrials.boss.TrialBoss;
 import de.t14d3.trickiertrials.mob.Affix;
 import de.t14d3.trickiertrials.mob.MobScaler;
 import de.t14d3.trickiertrials.util.Fx;
+import de.t14d3.trickiertrials.util.RankBadge;
 import de.t14d3.trickiertrials.util.Text;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.bossbar.BossBar;
@@ -243,7 +244,7 @@ public final class TrialSession implements BossHost {
         if (settings().titles) {
             Text.title(Audience.audience(players), ominous ? "session-start-title-ominous" : "session-start-title", "session-start-subtitle", 10, 50, 15,
                     Text.ph("waves", settings().finalWave > 0 ? String.valueOf(settings().finalWave) : "∞"),
-                    Text.ph("players", players.size()), Text.ph("rank", rankLabel()));
+                    Text.ph("players", players.size()), Text.ph("rank", rankLabel()), Text.ph("stars", RankBadge.component(rank)));
         }
         announceModifiers(players);
         Fx.sound(players, ominous ? Sound.BLOCK_TRIAL_SPAWNER_OMINOUS_ACTIVATE : Sound.BLOCK_TRIAL_SPAWNER_DETECT_PLAYER, 1f, 0.8f);
@@ -317,7 +318,7 @@ public final class TrialSession implements BossHost {
 
     private void announceModifiers(Collection<Player> players) {
         Component message = Text.parse(Text.raw("prefix") + Text.raw("session-modifiers"),
-                Text.ph("rank", rankLabel()), Text.ph("modifiers", Text.parse(modifierList())));
+                Text.ph("rank", rankLabel()), Text.ph("stars", RankBadge.component(rank)), Text.ph("modifiers", Text.parse(modifierList())));
         for (Player player : players) player.sendMessage(message);
     }
 
@@ -1043,15 +1044,15 @@ public final class TrialSession implements BossHost {
                     Text.ph("best_combo", run.bestCombo),
                     Text.ph("deaths", run.deaths),
                     Text.ph("mvp", mvp == null ? "-" : mvp.name),
-                    Text.ph("rank", rankLabel()),
+                    Text.ph("rank", rankLabel()), Text.ph("stars", RankBadge.component(rank)),
                     Text.ph("modifiers", Text.parse(modifierList()))
             };
             for (String line : plugin.getConfig().getStringList("messages.summary")) player.sendMessage(Text.parse(line, resolvers));
             for (String record : records) {
                 if (record.startsWith("RANK:")) {
                     int newRank = Integer.parseInt(record.substring(5));
-                    Text.send(player, "rank-up", Text.ph("rank", Text.roman(newRank)));
-                    if (settings().titles) Text.title(player, "rank-up-title", "rank-up-subtitle", 10, 60, 20, Text.ph("rank", Text.roman(newRank)));
+                    Text.send(player, "rank-up", Text.ph("rank", Text.roman(newRank)), Text.ph("stars", RankBadge.component(newRank)));
+                    if (settings().titles) Text.title(player, "rank-up-title", "rank-up-subtitle", 10, 60, 20, Text.ph("rank", Text.roman(newRank)), Text.ph("stars", RankBadge.component(newRank)));
                 } else {
                     Text.send(player, "new-record", Text.ph("what", record));
                 }

@@ -60,6 +60,11 @@ public final class StatsStore {
     }
 
     /** Records a finished run. Returns the descriptions of any personal bests that were beaten. */
+    /** Direct lookup by UUID (fast - used by placeholders). */
+    public ConfigurationSection get(UUID uuid) {
+        return data.getConfigurationSection("players." + uuid);
+    }
+
     public int rank(UUID uuid) {
         ConfigurationSection s = data.getConfigurationSection("players." + uuid);
         return s == null ? 0 : s.getInt("rank");

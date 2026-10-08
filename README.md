@@ -28,7 +28,7 @@ the whole structure. For a custom-built chamber, it is the area around the spawn
 - **Ominous chambers.** Ominous spawners make bosses stronger and elites more common.
 
 ### Built for replaying
-- **Trial Rank (0-10).** Each conquered chamber raises a player's rank by one. A group plays at its
+- **Trial Rank (0-20).** Each conquered chamber raises a player's rank by one. A group plays at its
   members' average rank. Every rank adds mob health, damage and elite chance, plus boss health.
   From rank 3, bosses gain elite affixes (two from rank 6). In return, victories give more Trial
   Keys and more score. Veterans can't steamroll, and new players aren't crushed when they play
@@ -120,11 +120,29 @@ the Paper API and no longer needs server internals.
 | `/trials warden respawn <name>` | Brings the Warden back and seals the trials now | `trickiertrials.admin` |
 | `/trials warden open <name>` | Opens the trials without a fight (for testing) | `trickiertrials.admin` |
 | `/trials warden remove <name>` / `list` | Deletes a Warden or lists all Wardens | `trickiertrials.admin` |
-| `/trials rank <player> <0-10>` | Sets a player's Trial Rank | `trickiertrials.admin` |
+| `/trials rank <player> <0-20>` | Sets a player's Trial Rank | `trickiertrials.admin` |
 | `/trials end` | Ends your encounter | `trickiertrials.admin` |
 | `/trials reload` | Reloads the config | `trickiertrials.admin` |
 
 The command can also be typed as `/trickiertrials` or `/tt`.
+
+## PlaceholderAPI
+If [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) is installed, these
+placeholders are available for TAB, scoreboards, chat formats and menus:
+
+| Placeholder | Example | Description |
+|---|---|---|
+| `%trickiertrials_rank_stars%` | ★★★ (coloured) | Rank badge with colours |
+| `%trickiertrials_rank_stars_hex%` | `&#C0C0C0★&#CD7F32★★` | Badge as written in the config, for plugins that read `&#RRGGBB` themselves |
+| `%trickiertrials_rank%` | `7` | Rank number (0-20) |
+| `%trickiertrials_rank_tier%` | `Gold` | Tier name |
+| `%trickiertrials_rank_roman%` | `VII` | Rank in roman numerals |
+| `%trickiertrials_best_score%`, `_best_wave`, `_kills`, `_bosses`, `_victories`, `_runs` | `12840` | Personal records |
+
+Rank badges: Bronze `#CD7F32` (1-3), Silver `#C0C0C0` (4-6), Gold `#FFD700` (7-9), Emerald `#50C878`
+(10-12), Diamond `#5CE1E6` (13-15), Crystal `#E8B4FF` (16-19, with ✦ sparkles at 19) and the max rank 20
+with ✪ stars in a pink to purple to cyan gradient. Every badge and tier name can be changed under
+`rank-badges` and `rank-tiers` in `config.yml`.
 
 ## Configuration
 Everything is in `config.yml`, including every message (MiniMessage) and the colour palette.

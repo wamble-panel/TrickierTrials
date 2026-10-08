@@ -4,6 +4,7 @@ main: de.t14d3.trickiertrials.TrickierTrials
 author: t14d3
 description: Waves, bosses, elite mobs, combos and leaderboards for Trial Chambers.
 api-version: '26.2'
+softdepend: [PlaceholderAPI]
 commands:
   trickiertrials:
     description: Trial encounters, stats and leaderboards

@@ -7,6 +7,7 @@ import de.t14d3.trickiertrials.guard.Warden;
 import de.t14d3.trickiertrials.session.Modifier;
 import de.t14d3.trickiertrials.session.TrialSession;
 import de.t14d3.trickiertrials.stats.StatsStore;
+import de.t14d3.trickiertrials.util.RankBadge;
 import de.t14d3.trickiertrials.util.Text;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
@@ -96,6 +97,7 @@ public final class TrialsCommand implements TabExecutor {
                 Text.ph("time", Text.duration(session.elapsed())),
                 Text.ph("ominous", session.ominous() ? Text.parse(" <dark_gray>·</dark_gray> <ominous>Ominous</ominous>") : Component.empty()),
                 Text.ph("rank", session.rank() <= 0 ? "-" : Text.roman(session.rank())),
+                Text.ph("stars", RankBadge.component(session.rank())),
                 Text.ph("modifiers", Text.parse(session.modifiers().isEmpty() ? "<muted>none</muted>"
                         : String.join("<dark_gray>, </dark_gray>", session.modifiers().stream().map(Modifier::mini).toList()))));
     }
@@ -122,7 +124,8 @@ public final class TrialsCommand implements TabExecutor {
                     Text.ph("victories", s.getInt("victories")),
                     Text.ph("runs", s.getInt("runs")),
                     Text.ph("best_combo", s.getInt("best-combo")),
-                    Text.ph("rank", s.getInt("rank") <= 0 ? "-" : Text.roman(s.getInt("rank")))));
+                    Text.ph("rank", s.getInt("rank") <= 0 ? "-" : Text.roman(s.getInt("rank"))),
+                    Text.ph("stars", RankBadge.component(s.getInt("rank")))));
         }
     }
 
@@ -141,7 +144,8 @@ public final class TrialsCommand implements TabExecutor {
             String value = category == StatsStore.Category.WAVE || category == StatsStore.Category.RANK
                     ? Text.roman((int) entry.value()) : Text.number(entry.value());
             sender.sendMessage(Text.parse(Text.raw("top-entry").replace("<rank_color>", "<" + color + ">").replace("</rank_color>", "</" + color + ">"),
-                    Text.ph("rank", i + 1), Text.ph("name", entry.name()), Text.ph("value", value)));
+                    Text.ph("rank", i + 1), Text.ph("name", entry.name()),
+                    Text.ph("value", category == StatsStore.Category.RANK ? RankBadge.component((int) entry.value()) : Text.parse("<gold>" + value + "</gold>"))));
         }
     }
 
@@ -176,7 +180,8 @@ public final class TrialsCommand implements TabExecutor {
             int value = Math.max(0, Math.min(plugin.settings().maxRank, Integer.parseInt(args[2])));
             plugin.stats().setRank(target.getUniqueId(), target.getName(), value);
             plugin.stats().saveAsync();
-            Text.send(sender, "rank-set", Text.ph("name", args[1]), Text.ph("rank", value <= 0 ? "-" : Text.roman(value)));
+            Text.send(sender, "rank-set", Text.ph("name", args[1]), Text.ph("rank", value <= 0 ? "-" : Text.roman(value)),
+                    Text.ph("stars", RankBadge.component(value)));
         } catch (NumberFormatException e) {
             Text.send(sender, "rank-usage");
         }

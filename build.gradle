@@ -11,10 +11,15 @@ repositories {
         name = 'papermc'
         url = 'https://repo.papermc.io/repository/maven-public/'
     }
+    maven {
+        name = 'placeholderapi'
+        url = 'https://repo.extendedclip.com/releases/'
+    }
 }
 
 dependencies {
     compileOnly 'io.papermc.paper:paper-api:26.2.build.+'
+    compileOnly 'me.clip:placeholderapi:2.11.6'
 }
 
 java {
