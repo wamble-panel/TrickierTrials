@@ -66,6 +66,9 @@ public final class Settings {
     public final int intermission;
     public final double waveClearHeal;
     public final boolean reinforcements;
+    public final boolean wakeSpawners;
+    public final boolean fallbackSpawns;
+    public final boolean spawnerRewardsOnce;
     public final int reinforcementDelay;
 
     // Bosses
@@ -160,6 +163,9 @@ public final class Settings {
         intermission = Math.max(1, c.getInt("waves.intermission", 6));
         waveClearHeal = c.getDouble("waves.wave-clear-heal", 6.0);
         reinforcements = c.getBoolean("waves.reinforcements", true);
+        wakeSpawners = c.getBoolean("waves.wake-spawners", true);
+        fallbackSpawns = c.getBoolean("waves.fallback-spawns", true);
+        spawnerRewardsOnce = c.getBoolean("waves.spawner-rewards-once", true);
         reinforcementDelay = Math.max(1, c.getInt("waves.reinforcement-delay", 5));
 
         bossesEnabled = c.getBoolean("bosses.enabled", true);

@@ -20,6 +20,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDispenseLootEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -250,6 +251,14 @@ public final class SessionManager implements Listener {
                 return;
             }
         }
+    }
+
+    /** Woken spawners pay their vanilla loot only once per encounter. */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onSpawnerLoot(BlockDispenseLootEvent event) {
+        if (!settings().spawnerRewardsOnce || event.getBlock().getType() != Material.TRIAL_SPAWNER) return;
+        TrialSession session = sessionAt(event.getBlock().getLocation());
+        if (session != null && !session.claimSpawnerReward(event.getBlock().getLocation())) event.setDispensedLoot(new ArrayList<>());
     }
 
     /** Bosses that survived a crash or restart have no encounter any more - remove them. */

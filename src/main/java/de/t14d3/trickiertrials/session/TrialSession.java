@@ -14,6 +14,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.title.Title;
 import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -21,6 +22,8 @@ import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.TrialSpawner;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
@@ -80,6 +83,8 @@ public final class TrialSession implements BossHost {
     private int idleTicks;
     private int emptyTicks;
     private boolean reinforcedThisWave;
+    private boolean awakenedThisWave;
+    private final Set<Location> rewardedSpawners = new HashSet<>();
     private long ticks;
     private long lastProgressTick;
     private long teamScore;
@@ -186,6 +191,7 @@ public final class TrialSession implements BossHost {
     // ───────────────────────────── Lifecycle ─────────────────────────────
 
     void start() {
+        discoverSpawners();
         updatePresence(false);
         wave = 1;
         Collection<Player> players = players();
@@ -200,8 +206,11 @@ public final class TrialSession implements BossHost {
 
     private void beginWave(boolean announce) {
         reinforcedThisWave = false;
+        awakenedThisWave = false;
         emptyTicks = 0;
         lastProgressTick = ticks;
+        discoverSpawners();
+        if (settings().wakeSpawners && !isBossWave(wave)) wakeSpawners(false);
         Collection<Player> players = players();
         if (isBossWave(wave)) {
             state = State.BOSS;
@@ -233,6 +242,17 @@ public final class TrialSession implements BossHost {
             Text.title(Audience.audience(players), "boss-incoming-title", "boss-incoming-subtitle", 5, 50, 15, Text.ph("boss", boss.name()));
         }
         Fx.sound(players, Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.8f, 0.9f);
+
+        // The boss climbs out of the nearest trial spawner.
+        spawners.keySet().stream()
+                .filter(s -> s.getWorld().equals(location.getWorld()) && s.distanceSquared(location) < 6 * 6)
+                .min(Comparator.comparingDouble(s -> s.distanceSquared(location)))
+                .ifPresent(spawner -> {
+                    Location center = spawner.clone().add(0.5, 0.5, 0.5);
+                    world.spawnParticle(Particle.TRIAL_SPAWNER_DETECTION_OMINOUS, center, 30, 0.5, 0.5, 0.5, 0);
+                    world.spawnParticle(Particle.OMINOUS_SPAWNING, center, 40, 0.5, 0.8, 0.5, 0.05);
+                    Fx.worldSound(center, Sound.BLOCK_TRIAL_SPAWNER_OMINOUS_ACTIVATE, 1.5f, 0.7f);
+                });
     }
 
     private BossType pickBossType() {
@@ -329,7 +349,83 @@ public final class TrialSession implements BossHost {
         if (emptyTicks < settings().reinforcementDelay * 20 && !stalled) return;
         emptyTicks = 0;
         lastProgressTick = ticks;
-        spawnReinforcements();
+
+        // First choice: let the chamber's own trial spawners deliver the next mobs.
+        if (settings().wakeSpawners && !stalled) {
+            int woken = wakeSpawners(true);
+            if (woken > 0 || spawnerBusyNearPlayers()) {
+                if (woken > 0 && !awakenedThisWave) {
+                    awakenedThisWave = true;
+                    for (Player player : players()) Text.send(player, "spawners-awaken");
+                }
+                return;
+            }
+        }
+        // No spawner can help (none nearby, or the wave is stuck): spawn mobs at the nearest spawner.
+        if (settings().fallbackSpawns || !settings().wakeSpawners) spawnReinforcements();
+    }
+
+    // ───────────────────────────── Trial spawners ─────────────────────────────
+
+    /** Finds every trial spawner inside the arena (in loaded chunks). */
+    private void discoverSpawners() {
+        int minX = (int) Math.floor(region.getMinX()) >> 4, maxX = (int) Math.floor(region.getMaxX()) >> 4;
+        int minZ = (int) Math.floor(region.getMinZ()) >> 4, maxZ = (int) Math.floor(region.getMaxZ()) >> 4;
+        for (int cx = minX; cx <= maxX; cx++) {
+            for (int cz = minZ; cz <= maxZ; cz++) {
+                if (!world.isChunkLoaded(cx, cz)) continue;
+                for (BlockState state : world.getChunkAt(cx, cz).getTileEntities(b -> b.getType() == Material.TRIAL_SPAWNER, false)) {
+                    Location location = state.getLocation();
+                    if (region.contains(location.toVector().add(new Vector(0.5, 0.5, 0.5)))) spawners.putIfAbsent(location, null);
+                }
+            }
+        }
+    }
+
+    private static org.bukkit.block.data.type.TrialSpawner.State spawnerState(Location location) {
+        if (!location.isChunkLoaded()) return null;
+        return location.getBlock().getBlockData() instanceof org.bukkit.block.data.type.TrialSpawner data ? data.getTrialSpawnerState() : null;
+    }
+
+    private boolean nearPlayers(Location location, double radius) {
+        for (Player player : players()) {
+            if (player.getWorld().equals(location.getWorld()) && player.getLocation().distanceSquared(location) <= radius * radius) return true;
+        }
+        return false;
+    }
+
+    /** True if a spawner near the players is already waiting for them or fighting. */
+    private boolean spawnerBusyNearPlayers() {
+        for (Location location : spawners.keySet()) {
+            org.bukkit.block.data.type.TrialSpawner.State state = spawnerState(location);
+            if (state == org.bukkit.block.data.type.TrialSpawner.State.ACTIVE && nearPlayers(location, 24)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Ends the cooldown of trial spawners so vanilla reactivates them: they detect the players again, open
+     * their shutters and spawn a fresh set of mobs, exactly like a newly found spawner.
+     */
+    private int wakeSpawners(boolean nearPlayersOnly) {
+        long now = world.getGameTime();
+        int woken = 0;
+        for (Location location : spawners.keySet()) {
+            if (spawnerState(location) != org.bukkit.block.data.type.TrialSpawner.State.COOLDOWN) continue;
+            if (nearPlayersOnly && !nearPlayers(location, 24)) continue;
+            if (!(location.getBlock().getState() instanceof TrialSpawner spawner)) continue;
+            spawner.setCooldownEnd(now);
+            spawner.update(true, false);
+            Location center = location.clone().add(0.5, 0.5, 0.5);
+            world.spawnParticle(ominous ? Particle.TRIAL_SPAWNER_DETECTION_OMINOUS : Particle.TRIAL_SPAWNER_DETECTION, center, 12, 0.4, 0.4, 0.4, 0);
+            woken++;
+        }
+        return woken;
+    }
+
+    /** Vanilla spawner loot is paid once per spawner per encounter, so waking spawners can't be farmed. */
+    boolean claimSpawnerReward(Location spawner) {
+        return rewardedSpawners.add(spawner);
     }
 
     private void spawnReinforcements() {

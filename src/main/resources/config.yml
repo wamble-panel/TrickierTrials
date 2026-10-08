@@ -97,7 +97,8 @@ elites:
 
 # ────────────────────────────────── Waves ───────────────────────────────────
 # An encounter starts the moment a trial spawner spawns its first mob. Kill trial mobs to fill
-# the wave bar. If the chamber runs dry, it sends reinforcements so the wave can always finish.
+# the wave bar. Mobs come from the chamber's real trial spawners: at every wave (and whenever the
+# fight runs dry) spawners on cooldown are woken up and run their vanilla activation again.
 waves:
   kills-base: 8
   kills-per-extra-player: 4
@@ -109,7 +110,13 @@ waves:
   intermission: 6              # seconds between waves
   wave-clear-heal: 6.0         # health restored to every player when a wave is cleared
   reinforcements: true
-  reinforcement-delay: 5       # seconds without living mobs before reinforcements arrive
+  reinforcement-delay: 5       # seconds without living mobs before spawners are woken / reinforcements arrive
+  wake-spawners: true          # reactivate the chamber's own trial spawners for every wave
+  # If no trial spawner near the players can be woken (or the wave is stuck for 45s), spawn
+  # trial mobs directly at the nearest spawner so the wave can always finish.
+  fallback-spawns: true
+  # Woken spawners only drop their vanilla trial-key loot once per encounter (prevents farming).
+  spawner-rewards-once: true
 
 # ────────────────────────────────── Bosses ──────────────────────────────────
 bosses:
@@ -228,6 +235,7 @@ messages:
   boss-defeated-subtitle: "<boss> <muted>has fallen</muted>"
   boss-defeated-chat: "<gold>✦</gold> <boss> <muted>was slain by</muted> <light><player></light> <muted>in</muted> <light><time></light>"
   reinforcements: "<ominous>The chamber stirs...</ominous> <muted>reinforcements arrive!</muted>"
+  spawners-awaken: "<teal>The trial spawners awaken...</teal> <muted>more foes are coming!</muted>"
   player-fallen: "<danger>☠</danger> <light><player></light> <muted>has fallen on wave</muted> <teal><wave></teal> <danger>(-<penalty>)</danger>"
   victory-title: "<gradient:gold:copper:gold><bold>CHAMBER CONQUERED</bold></gradient>"
   victory-subtitle: "<muted>All <light><waves></light> waves survived in <light><time></light></muted>"

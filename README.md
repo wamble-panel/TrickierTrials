@@ -11,8 +11,12 @@ the whole structure. For a custom-built chamber, it is the area around the spawn
 
 - **Waves.** Kill trial mobs to fill the wave bar. Each wave needs more kills and makes mobs stronger.
   Clearing a wave heals everyone, pays out bonus points and starts a short break.
-- **Reinforcements.** Vanilla spawners run out of mobs. When that happens, the chamber spawns
-  more mobs so a wave can always finish.
+- **Real trial spawners.** Each wave is fought against the chamber's own trial spawners. At the
+  start of a wave, and whenever the fight runs dry, spawners on cooldown are woken up. They then
+  detect players, open their shutters and spawn mobs exactly as in vanilla. Their trial-key loot
+  drops only once per spawner per encounter, so waking them can't be farmed.
+- **Fallback spawns.** If no spawner near the players can be woken, or a wave is stuck, trial mobs
+  appear at the nearest spawner so the wave can always finish.
 - **Boss waves.** Every 3rd wave (configurable) is a boss fight. A boss uses telegraphed abilities,
   summons minions at 66% and 33% health, and enrages at low health.
 - **Victory.** Beating the final wave (default 9) conquers the chamber. Players get fireworks,
