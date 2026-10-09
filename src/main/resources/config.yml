@@ -7,7 +7,7 @@
 # Every palette colour below can be used as a tag (<copper>text</copper>) and inside
 # gradients (<gradient:copper:gold>text</gradient>).
 
-config-version: 5
+config-version: 6
 
 palette:
   copper: "#E8875B"   # warm copper - main accent
@@ -167,8 +167,8 @@ bosses:
 progression:
   enabled: true
   max-rank: 20
-  # Conquered chambers needed for each rank (1st number = rank 1 ... 20th = rank 20). Default: 99 total.
-  wins-per-rank: [2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 10]
+  # Conquered chambers needed for each rank (1st number = rank 1 ... 20th = rank 20). Default: 121 total.
+  wins-per-rank: [3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 10, 12]
   require-own-rank: true         # a win only counts if the trial's rank was at least your own rank
   max-deaths: 1                  # a win only counts if you died at most this often (-1 = no limit)
   join-by-wave: 2                # a win only counts if you were there by this wave (0 = no limit)
@@ -277,6 +277,44 @@ weekly:
       items: ["TRIAL_KEY 2 1.0"]
       commands: []
 
+# ──────────────────────────────── Holograms ─────────────────────────────────
+# /trials hologram <weekly|lastweek|top <category>> [name] creates a FancyHolograms hologram with these
+# lines where you stand (needs FancyHolograms + PlaceholderAPI). Edit it later with /hologram edit.
+holograms:
+  update-interval: 5s
+  weekly:
+    - "<gradient:#E8875B:#F7C873><b>⚔ WEEKLY TRIALS ⚔</b></gradient>"
+    - "<gray>Resets in <white>%trickiertrials_weekly_reset%"
+    - "<#FFD700>#1 <white>%trickiertrials_weekly_name_1% <dark_gray>- <#F7C873>%trickiertrials_weekly_score_1%"
+    - "<#C0C0C0>#2 <white>%trickiertrials_weekly_name_2% <dark_gray>- <#F7C873>%trickiertrials_weekly_score_2%"
+    - "<#CD7F32>#3 <white>%trickiertrials_weekly_name_3% <dark_gray>- <#F7C873>%trickiertrials_weekly_score_3%"
+    - "<#9A9AA6>#4 <white>%trickiertrials_weekly_name_4% <dark_gray>- <#F7C873>%trickiertrials_weekly_score_4%"
+    - "<#9A9AA6>#5 <white>%trickiertrials_weekly_name_5% <dark_gray>- <#F7C873>%trickiertrials_weekly_score_5%"
+    - "<#9A9AA6>#6 <white>%trickiertrials_weekly_name_6% <dark_gray>- <#F7C873>%trickiertrials_weekly_score_6%"
+    - "<#9A9AA6>#7 <white>%trickiertrials_weekly_name_7% <dark_gray>- <#F7C873>%trickiertrials_weekly_score_7%"
+    - "<#9A9AA6>#8 <white>%trickiertrials_weekly_name_8% <dark_gray>- <#F7C873>%trickiertrials_weekly_score_8%"
+    - "<#9A9AA6>#9 <white>%trickiertrials_weekly_name_9% <dark_gray>- <#F7C873>%trickiertrials_weekly_score_9%"
+    - "<#9A9AA6>#10 <white>%trickiertrials_weekly_name_10% <dark_gray>- <#F7C873>%trickiertrials_weekly_score_10%"
+    - "<gray>You: <white>#%trickiertrials_weekly_position% <dark_gray>- <#F7C873>%trickiertrials_weekly_score%"
+  lastweek:
+    - "<gradient:#F7C873:#E8875B><b>✦ LAST WEEK'S CHAMPIONS ✦</b></gradient>"
+    - "<#FFD700>#1 <white>%trickiertrials_lastweek_name_1% <dark_gray>- <#F7C873>%trickiertrials_lastweek_score_1%"
+    - "<#C0C0C0>#2 <white>%trickiertrials_lastweek_name_2% <dark_gray>- <#F7C873>%trickiertrials_lastweek_score_2%"
+    - "<#CD7F32>#3 <white>%trickiertrials_lastweek_name_3% <dark_gray>- <#F7C873>%trickiertrials_lastweek_score_3%"
+  # {category} = score, wave, kills, bosses, victories or rank; {title} = its name
+  top:
+    - "<gradient:#5CC8B5:#9AD8FF><b>⚔ {title} ⚔</b></gradient>"
+    - "<#FFD700>#1 <white>%trickiertrials_top_{category}_name_1% <dark_gray>- <#F7C873>%trickiertrials_top_{category}_value_1%"
+    - "<#C0C0C0>#2 <white>%trickiertrials_top_{category}_name_2% <dark_gray>- <#F7C873>%trickiertrials_top_{category}_value_2%"
+    - "<#CD7F32>#3 <white>%trickiertrials_top_{category}_name_3% <dark_gray>- <#F7C873>%trickiertrials_top_{category}_value_3%"
+    - "<#9A9AA6>#4 <white>%trickiertrials_top_{category}_name_4% <dark_gray>- <#F7C873>%trickiertrials_top_{category}_value_4%"
+    - "<#9A9AA6>#5 <white>%trickiertrials_top_{category}_name_5% <dark_gray>- <#F7C873>%trickiertrials_top_{category}_value_5%"
+    - "<#9A9AA6>#6 <white>%trickiertrials_top_{category}_name_6% <dark_gray>- <#F7C873>%trickiertrials_top_{category}_value_6%"
+    - "<#9A9AA6>#7 <white>%trickiertrials_top_{category}_name_7% <dark_gray>- <#F7C873>%trickiertrials_top_{category}_value_7%"
+    - "<#9A9AA6>#8 <white>%trickiertrials_top_{category}_name_8% <dark_gray>- <#F7C873>%trickiertrials_top_{category}_value_8%"
+    - "<#9A9AA6>#9 <white>%trickiertrials_top_{category}_name_9% <dark_gray>- <#F7C873>%trickiertrials_top_{category}_value_9%"
+    - "<#9A9AA6>#10 <white>%trickiertrials_top_{category}_name_10% <dark_gray>- <#F7C873>%trickiertrials_top_{category}_value_10%"
+
 # ───────────────────────────── Score & combos ───────────────────────────────
 score:
   kill: 10
@@ -324,6 +362,7 @@ messages:
     - "<copper>/trials stats [player]</copper> <muted>- personal records</muted>"
     - "<copper>/trials top [score|wave|kills|bosses|victories|rank]</copper> <muted>- leaderboard</muted>"
     - "<copper>/trials weekly</copper> <muted>- this week's leaderboard</muted>"
+    - "<copper>/trials hologram <weekly|lastweek|top></copper> <muted>- create a leaderboard hologram (admin)</muted>"
     - "<copper>/trials rank <player> <0-20></copper> <muted>- set a Trial Rank (admin)</muted>"
     - "<copper>/trials boss <type></copper> <muted>- summon a boss (admin)</muted>"
     - "<copper>/trials warden <create|point|respawn|open|remove|list> <name></copper> <muted>- chamber guard (admin)</muted>"
@@ -428,6 +467,9 @@ messages:
   weekly-self: "<muted>You:</muted> <light><position></light> <dark_gray>·</dark_gray> <gold><score></gold> <muted>points this week</muted>"
   weekly-winners: "<gold>✦</gold> <muted>The weekly trial leaderboard has reset! Winners:</muted> <light><winners></light>"
   weekly-prize: "<gold>✦</gold> <muted>You placed</muted> <gold>#<place></gold> <muted>on last week's trial leaderboard - here is your prize!</muted>"
+  hologram-created: "<success>Hologram <light><name></light> created.</success> <muted>Edit it with</muted> <copper>/hologram edit <name></copper>"
+  hologram-missing: "<danger>FancyHolograms is not installed.</danger>"
+  hologram-usage: "<muted>Usage:</muted> <copper>/trials hologram <weekly|lastweek|top <category>> [name]</copper>"
   weekly-reset-done: "<success>Weekly leaderboard ended and prizes handed out.</success>"
 
   # Vaults

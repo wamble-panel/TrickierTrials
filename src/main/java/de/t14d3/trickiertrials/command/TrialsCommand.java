@@ -47,6 +47,7 @@ public final class TrialsCommand implements TabExecutor {
             case "stats" -> stats(sender, args.length > 1 ? args[1] : null);
             case "top" -> top(sender, args.length > 1 ? args[1] : "score");
             case "weekly" -> weekly(sender, args);
+            case "hologram", "holo" -> hologram(sender, args);
             case "boss" -> boss(sender, args);
             case "warden" -> warden(sender, args);
             case "rank" -> rank(sender, args);
@@ -165,6 +166,61 @@ public final class TrialsCommand implements TabExecutor {
             return;
         }
         if (plugin.sessions().summonBoss(player, type) == null) Text.send(sender, "not-in-session");
+    }
+
+    /** /trials hologram <weekly|lastweek|top <category>> [name] - builds a FancyHolograms leaderboard where you stand. */
+    private void hologram(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return;
+        if (!(sender instanceof Player player)) {
+            Text.send(sender, "player-only");
+            return;
+        }
+        if (!plugin.getServer().getPluginManager().isPluginEnabled("FancyHolograms")) {
+            Text.send(sender, "hologram-missing");
+            return;
+        }
+        if (args.length < 2) {
+            Text.send(sender, "hologram-usage");
+            return;
+        }
+        String type = args[1].toLowerCase(Locale.ROOT);
+        List<String> lines;
+        String name;
+        switch (type) {
+            case "weekly", "lastweek" -> {
+                lines = plugin.getConfig().getStringList("holograms." + type);
+                name = args.length > 2 ? args[2] : "trials_" + type;
+            }
+            case "top" -> {
+                StatsStore.Category category = args.length > 2 ? StatsStore.Category.byName(args[2]) : null;
+                if (category == null) {
+                    Text.send(sender, "hologram-usage");
+                    return;
+                }
+                String id = category.name().toLowerCase(Locale.ROOT);
+                lines = new ArrayList<>();
+                for (String line : plugin.getConfig().getStringList("holograms.top")) {
+                    lines.add(line.replace("{category}", id).replace("{title}", category.label.toUpperCase(Locale.ROOT)));
+                }
+                name = args.length > 3 ? args[3] : "trials_top_" + id;
+            }
+            default -> {
+                Text.send(sender, "hologram-usage");
+                return;
+            }
+        }
+        if (lines.isEmpty() || !name.matches("[A-Za-z0-9_-]+")) {
+            Text.send(sender, "hologram-usage");
+            return;
+        }
+        // FancyHolograms places new holograms at the player, so its commands are run as the player.
+        player.performCommand("hologram create text " + name);
+        player.performCommand("hologram edit " + name + " setLine 1 " + lines.getFirst());
+        for (String line : lines.subList(1, lines.size())) {
+            if (!line.isBlank()) player.performCommand("hologram edit " + name + " addLine " + line);
+        }
+        player.performCommand("hologram edit " + name + " updateTextInterval " + plugin.getConfig().getString("holograms.update-interval", "5s"));
+        Text.send(sender, "hologram-created", Text.ph("name", name));
     }
 
     private void weekly(CommandSender sender, String[] args) {
@@ -289,12 +345,13 @@ public final class TrialsCommand implements TabExecutor {
         List<String> options = new ArrayList<>();
         if (args.length == 1) {
             options.addAll(List.of("info", "stats", "top", "weekly"));
-            if (sender.hasPermission(ADMIN)) options.addAll(List.of("boss", "warden", "rank", "end", "reload"));
+            if (sender.hasPermission(ADMIN)) options.addAll(List.of("boss", "warden", "rank", "hologram", "end", "reload"));
         } else if (args.length == 2) {
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "top" -> Arrays.stream(StatsStore.Category.values()).forEach(c -> options.add(c.name().toLowerCase(Locale.ROOT)));
                 case "boss" -> Arrays.stream(BossType.values()).forEach(b -> options.add(b.id()));
                 case "stats", "rank" -> plugin.getServer().getOnlinePlayers().forEach(p -> options.add(p.getName()));
+                case "hologram" -> options.addAll(List.of("weekly", "lastweek", "top"));
                 case "weekly" -> {
                     if (sender.hasPermission(ADMIN)) options.add("reset");
                 }
@@ -302,6 +359,9 @@ public final class TrialsCommand implements TabExecutor {
                 default -> {
                 }
             }
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("hologram") && args[1].equalsIgnoreCase("top")) {
+            Arrays.stream(StatsStore.Category.values()).forEach(c -> options.add(c.name().toLowerCase(Locale.ROOT)));
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("warden") && !args[1].equalsIgnoreCase("create")) {
             plugin.guards().all().forEach(w -> options.add(w.name()));

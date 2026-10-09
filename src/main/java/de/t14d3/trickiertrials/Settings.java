@@ -258,7 +258,7 @@ public final class Settings {
         rankRewardBonus = c.getDouble("progression.reward-bonus-per-rank", 0.15);
         rankScoreBonus = c.getDouble("progression.score-bonus-per-rank", 0.06);
         List<Integer> wins = c.getIntegerList("progression.wins-per-rank");
-        rankWinsPerRank = wins.isEmpty() ? List.of(2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 10) : wins;
+        rankWinsPerRank = wins.isEmpty() ? List.of(3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 10, 12) : wins;
         rankRequireOwn = c.getBoolean("progression.require-own-rank", true);
         rankMaxDeaths = c.getInt("progression.max-deaths", 1);
         rankJoinByWave = c.getInt("progression.join-by-wave", 2);

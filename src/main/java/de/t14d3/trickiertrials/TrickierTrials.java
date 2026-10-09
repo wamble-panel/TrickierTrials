@@ -89,6 +89,7 @@ public final class TrickierTrials extends JavaPlugin {
         boolean upgraded = upgradeToV3();
         upgraded |= upgradeToV4();
         upgraded |= upgradeToV5();
+        upgraded |= upgradeToV6();
         if (missing || upgraded) {
             getConfig().options().copyDefaults(true);
             saveConfig();
@@ -161,6 +162,17 @@ public final class TrickierTrials extends JavaPlugin {
         }
         if (changed) c.set("rank-badges", badges);
         c.set("config-version", 5);
+        return true;
+    }
+
+    /** v6 made levelling slightly harder (99 -> 121 wins); custom wins-per-rank lists are kept. */
+    private boolean upgradeToV6() {
+        var c = getConfig();
+        if (!c.isSet("config-version") || c.getInt("config-version") >= 6) return false;
+        if (c.getIntegerList("progression.wins-per-rank").equals(List.of(2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 10))) {
+            c.set("progression.wins-per-rank", List.of(3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 10, 12));
+        }
+        c.set("config-version", 6);
         return true;
     }
 

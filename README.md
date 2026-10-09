@@ -30,8 +30,8 @@ the whole structure. For a custom-built chamber, it is the area around the spawn
 ### Built for replaying
 - **Trial Rank (0-20), built to be a long grind.** Conquering chambers earns progress towards the next
   rank:
-  - **Wins needed rise with rank.** Ranks 1-3 need 2 wins each, rising to 10 wins for rank 20, for
-    99 conquered chambers in total.
+  - **Wins needed rise with rank.** Ranks 1-3 need 2 wins each, rising to 12 wins for rank 20, for
+    121 conquered chambers in total.
   - **A win only counts if** the trial was at your own rank or higher, you died at most once, and you
     were there by wave 2.
   - **A failed trial costs 1 win of progress.** You never lose a whole rank.
@@ -129,6 +129,7 @@ the Paper API and no longer needs server internals.
 | `/trials warden open <name>` | Opens the trials without a fight (for testing) | `trickiertrials.admin` |
 | `/trials warden remove <name>` / `list` | Deletes a Warden or lists all Wardens | `trickiertrials.admin` |
 | `/trials rank <player> <0-20>` | Sets a player's Trial Rank | `trickiertrials.admin` |
+| `/trials hologram <weekly\|lastweek\|top <category>> [name]` | Creates a FancyHolograms leaderboard where you stand | `trickiertrials.admin` |
 | `/trials end` | Ends your encounter | `trickiertrials.admin` |
 | `/trials reload` | Reloads the config | `trickiertrials.admin` |
 
@@ -146,19 +147,15 @@ and `timezone` under `weekly`. When a week ends:
 `/trials weekly` shows the standings, your position and the time left. `/trials weekly reset`
 (admin) ends the week immediately and pays out the prizes.
 
-### FancyHolograms example
-With PlaceholderAPI installed, FancyHolograms can show the board live:
-```
-/hologram create text trials_weekly
-/hologram edit trials_weekly setLine 1 <gradient:#E8875B:#F7C873><b>WEEKLY TRIALS</b></gradient>
-/hologram edit trials_weekly addLine <gray>Resets in <white>%trickiertrials_weekly_reset%
-/hologram edit trials_weekly addLine <#FFD700>#1 <white>%trickiertrials_weekly_name_1% <gray>- <#F7C873>%trickiertrials_weekly_score_1%
-/hologram edit trials_weekly addLine <#C0C0C0>#2 <white>%trickiertrials_weekly_name_2% <gray>- <#F7C873>%trickiertrials_weekly_score_2%
-/hologram edit trials_weekly addLine <#CD7F32>#3 <white>%trickiertrials_weekly_name_3% <gray>- <#F7C873>%trickiertrials_weekly_score_3%
-/hologram edit trials_weekly addLine <gray>You: <white>#%trickiertrials_weekly_position% <gray>- <#F7C873>%trickiertrials_weekly_score%
-/hologram edit trials_weekly updateTextInterval 5s
-```
-Command names can differ slightly between FancyHolograms versions; check `/hologram help`.
+### Leaderboard holograms (FancyHolograms)
+With FancyHolograms and PlaceholderAPI installed, stand where the board should appear and run:
+- `/trials hologram weekly`: this week's top 10, the reset countdown and the viewer's own place
+- `/trials hologram lastweek`: last week's champions
+- `/trials hologram top <score|wave|kills|bosses|victories|rank>`: a lifetime top 10
+
+Add a name at the end to choose the hologram's name, otherwise it is `trials_weekly` and so on. Use a name
+that doesn't exist yet. The lines come from `holograms` in `config.yml`, and the hologram can be edited
+afterwards with `/hologram edit <name>`.
 
 ## PlaceholderAPI
 If [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) is installed, these
