@@ -30,7 +30,7 @@ the whole structure. For a custom-built chamber, it is the area around the spawn
 ### Built for replaying
 - **Trial Rank (0-20), built to be a long grind.** Conquering chambers earns progress towards the next
   rank:
-  - **Wins needed rise with rank.** Ranks 1-3 need 2 wins each, rising to 12 wins for rank 20, for
+  - **Wins needed rise with rank.** Ranks 1-3 need 3 wins each, rising to 12 wins for rank 20, for
     121 conquered chambers in total.
   - **A win only counts if** the trial was at your own rank or higher, you died at most once, and you
     were there by wave 2.
