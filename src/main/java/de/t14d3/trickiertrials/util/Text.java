@@ -133,8 +133,11 @@ public final class Text {
         return Placeholder.component(key, value);
     }
 
+    /** One formatter per thread: reused (it is called many times per second) and safe for async placeholder requests. */
+    private static final ThreadLocal<NumberFormat> NUMBER = ThreadLocal.withInitial(() -> NumberFormat.getIntegerInstance(Locale.US));
+
     public static String number(long value) {
-        return NumberFormat.getIntegerInstance(Locale.US).format(value);
+        return NUMBER.get().format(value);
     }
 
     public static String roman(int number) {
