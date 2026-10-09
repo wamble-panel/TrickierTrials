@@ -177,7 +177,7 @@ progression:
 # Star badge for every rank (index = rank, 0-20). &#RRGGBB colours. Shown in /trials and through
 # the PlaceholderAPI placeholders %trickiertrials_rank_stars% / %trickiertrials_rank_stars_hex%.
 rank-badges:
-  - "&#7A7A7A☆"                        # 0  unranked
+  - ""                                 # 0  unranked (shows nothing)
   - "&#CD7F32★"                        # 1  Bronze
   - "&#CD7F32★★"                       # 2
   - "&#CD7F32★★★"                      # 3

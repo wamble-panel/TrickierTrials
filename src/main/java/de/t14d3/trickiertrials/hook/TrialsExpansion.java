@@ -54,6 +54,8 @@ public final class TrialsExpansion extends PlaceholderExpansion {
         if (player == null) return "";
         int rank = plugin.stats().rank(player.getUniqueId());
         String key = params.toLowerCase(Locale.ROOT);
+        // Unranked players show no badge at all.
+        if (rank <= 0 && key.startsWith("rank_stars")) return "";
         switch (key) {
             case "rank" -> {
                 return String.valueOf(rank);
