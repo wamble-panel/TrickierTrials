@@ -114,6 +114,11 @@ public final class Settings {
     public final int bossAffixRank;
     public final double rankRewardBonus;
     public final double rankScoreBonus;
+    public final List<Integer> rankWinsPerRank;
+    public final boolean rankRequireOwn;
+    public final int rankMaxDeaths;
+    public final int rankJoinByWave;
+    public final int rankFailurePenalty;
     public final boolean modifiersEnabled;
     public final int modifiersBase;
     public final int modifiersPerRanks;
@@ -241,6 +246,12 @@ public final class Settings {
         bossAffixRank = c.getInt("progression.boss-affix-rank", 5);
         rankRewardBonus = c.getDouble("progression.reward-bonus-per-rank", 0.15);
         rankScoreBonus = c.getDouble("progression.score-bonus-per-rank", 0.06);
+        List<Integer> wins = c.getIntegerList("progression.wins-per-rank");
+        rankWinsPerRank = wins.isEmpty() ? List.of(2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 10) : wins;
+        rankRequireOwn = c.getBoolean("progression.require-own-rank", true);
+        rankMaxDeaths = c.getInt("progression.max-deaths", 1);
+        rankJoinByWave = c.getInt("progression.join-by-wave", 2);
+        rankFailurePenalty = Math.max(0, c.getInt("progression.failure-penalty", 1));
         modifiersEnabled = c.getBoolean("modifiers.enabled", true);
         modifiersBase = Math.max(0, c.getInt("modifiers.base", 1));
         modifiersPerRanks = c.getInt("modifiers.extra-every-ranks", 5);
@@ -267,6 +278,11 @@ public final class Settings {
         vaultResetEnabled = c.getBoolean("vault-reset.enabled", true);
         long cooldown = c.getLong("vault-reset.cooldown", 86400);
         vaultCooldownMillis = cooldown < 0 ? -1 : cooldown * 1000L;
+    }
+
+    public de.t14d3.trickiertrials.stats.StatsStore.RankRules rankRules() {
+        return new de.t14d3.trickiertrials.stats.StatsStore.RankRules(maxRank, rankWinsPerRank, rankRequireOwn,
+                rankMaxDeaths, rankJoinByWave, rankFailurePenalty);
     }
 
     public boolean bossEnabled(String id) {

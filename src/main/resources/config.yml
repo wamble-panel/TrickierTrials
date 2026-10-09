@@ -161,11 +161,17 @@ bosses:
     - "TRIAL_KEY 1 1.0"
 
 # ─────────────────────────────── Trial Rank ─────────────────────────────────
-# Every conquered chamber raises a player's Trial Rank by one. A group plays at the average rank of
+# Conquering chambers moves players towards the next Trial Rank. A group plays at the average rank of
 # its members, so veterans always face a harder (and more rewarding) trial than newcomers.
 progression:
   enabled: true
   max-rank: 20
+  # Conquered chambers needed for each rank (1st number = rank 1 ... 20th = rank 20). Default: 99 total.
+  wins-per-rank: [2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 10]
+  require-own-rank: true         # a win only counts if the trial's rank was at least your own rank
+  max-deaths: 1                  # a win only counts if you died at most this often (-1 = no limit)
+  join-by-wave: 2                # a win only counts if you were there by this wave (0 = no limit)
+  failure-penalty: 1             # a failed trial removes this many wins of progress (never a whole rank)
   health-per-rank: 0.05          # +5% mob health per rank (rank 20 = +100%)
   damage-per-rank: 0.03          # +3% mob damage per rank (rank 20 = +60%)
   elite-chance-per-rank: 0.015
@@ -319,6 +325,11 @@ messages:
   blitz-failed: "<danger>Blitz failed</danger> <muted>- the timer ran out.</muted>"
   treasure-caught: "<gold>✦</gold> <light><player></light> <muted>caught the Treasure Breeze!</muted> <gold><keys> Trial Key(s)</gold> <muted>dropped.</muted>"
   treasure-escaped: "<muted>The Treasure Breeze escaped...</muted>"
+  rank-progress: "<gold>✦</gold> <muted>Rank progress:</muted> <gold><have>/<need></gold> <muted>wins towards</muted> <stars>"
+  rank-progress-lost: "<danger>Trial failed</danger> <muted>- rank progress dropped to</muted> <gold><have>/<need></gold>"
+  rank-no-progress-below: "<muted>This win did not count towards your rank - the trial's rank was below yours.</muted> <gold><have>/<need></gold>"
+  rank-no-progress-deaths: "<muted>This win did not count towards your rank - you died more than <max_deaths> time(s).</muted> <gold><have>/<need></gold>"
+  rank-no-progress-late: "<muted>This win did not count towards your rank - you joined after wave <join_wave>.</muted> <gold><have>/<need></gold>"
   rank-up: "<gradient:gold:copper><bold>RANK UP!</bold></gradient> <muted>You are now Trial Rank</muted> <stars> <gold><rank></gold><muted>. Trials will be harder - and more rewarding.</muted>"
   rank-up-title: "<gradient:gold:copper><bold>TRIAL RANK <rank></bold></gradient>"
   rank-up-subtitle: "<stars>"
@@ -363,7 +374,7 @@ messages:
     - " <muted>Best score</muted> <gold><best_score></gold> <dark_gray>·</dark_gray> <muted>Best wave</muted> <teal><best_wave></teal>"
     - " <muted>Kills</muted> <light><kills></light> <dark_gray>·</dark_gray> <muted>Elites</muted> <light><elites></light> <dark_gray>·</dark_gray> <muted>Bosses</muted> <light><bosses></light>"
     - " <muted>Conquered</muted> <success><victories></success><muted>/<runs> runs</muted> <dark_gray>·</dark_gray> <muted>Best combo</muted> <copper><best_combo>x</copper>"
-    - " <muted>Trial Rank</muted> <stars> <gold><rank></gold>"
+    - " <muted>Trial Rank</muted> <stars> <gold><rank></gold> <dark_gray>·</dark_gray> <muted>Next rank:</muted> <gold><progress></gold> <muted>wins</muted>"
   top-header: "<gradient:copper:gold><bold>Trial Leaderboard</bold></gradient> <muted>· <category></muted>"
   top-entry: " <rank_color>#<rank></rank_color> <light><name></light> <dark_gray>-</dark_gray> <value>"
   top-empty: "<muted>No runs recorded yet. Go conquer a chamber!</muted>"

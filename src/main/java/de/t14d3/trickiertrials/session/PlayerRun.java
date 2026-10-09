@@ -15,6 +15,8 @@ public final class PlayerRun {
     public int combo;
     public int bestCombo;
     public long lastKillTick;
+    /** The wave this player joined the trial on. */
+    public int joinWave;
 
     PlayerRun(UUID uuid, String name) {
         this.uuid = uuid;

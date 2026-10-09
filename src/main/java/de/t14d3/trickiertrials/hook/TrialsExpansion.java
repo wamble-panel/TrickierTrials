@@ -17,6 +17,8 @@ import java.util.Locale;
  * %trickiertrials_rank_stars_hex%  star badge as &amp;#RRGGBB text, exactly as in the config
  * %trickiertrials_rank_tier%       tier name (Bronze, Silver, ...)
  * %trickiertrials_rank_roman%      rank as a roman numeral
+ * %trickiertrials_progress%        wins towards the next rank (MAX at max rank)
+ * %trickiertrials_progress_needed% wins the next rank needs
  * %trickiertrials_best_score% %trickiertrials_best_wave% %trickiertrials_kills%
  * %trickiertrials_bosses% %trickiertrials_victories% %trickiertrials_runs%
  * </pre>
@@ -74,6 +76,11 @@ public final class TrialsExpansion extends PlaceholderExpansion {
             }
             default -> {
             }
+        }
+        if (key.equals("progress") || key.equals("progress_needed")) {
+            if (rank >= plugin.settings().maxRank) return key.equals("progress") ? "MAX" : "";
+            return key.equals("progress") ? String.valueOf(plugin.stats().rankProgress(player.getUniqueId()))
+                    : String.valueOf(plugin.settings().rankRules().winsFor(rank + 1));
         }
         ConfigurationSection stats = plugin.stats().get(player.getUniqueId());
         String path = switch (key) {

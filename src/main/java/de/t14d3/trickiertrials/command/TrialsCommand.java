@@ -60,7 +60,7 @@ public final class TrialsCommand implements TabExecutor {
                     Text.send(sender, "not-in-session");
                     return true;
                 }
-                plugin.sessions().end(session, false);
+                plugin.sessions().end(session, false, false);
                 Text.send(sender, "session-ended-admin");
             }
             default -> {
@@ -125,7 +125,9 @@ public final class TrialsCommand implements TabExecutor {
                     Text.ph("runs", s.getInt("runs")),
                     Text.ph("best_combo", s.getInt("best-combo")),
                     Text.ph("rank", s.getInt("rank") <= 0 ? "-" : Text.roman(s.getInt("rank"))),
-                    Text.ph("stars", RankBadge.component(s.getInt("rank")))));
+                    Text.ph("stars", RankBadge.component(s.getInt("rank"))),
+                    Text.ph("progress", s.getInt("rank") >= plugin.settings().maxRank ? "MAX"
+                            : s.getInt("rank-progress") + "/" + plugin.settings().rankRules().winsFor(s.getInt("rank") + 1))));
         }
     }
 

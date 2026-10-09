@@ -67,7 +67,7 @@ public final class SessionManager implements Listener {
 
     public void shutdown() {
         if (task != null) task.cancel();
-        for (TrialSession session : List.copyOf(sessions)) end(session, false);
+        for (TrialSession session : List.copyOf(sessions)) end(session, false, false);
         mobIndex.clear();
     }
 
@@ -90,8 +90,13 @@ public final class SessionManager implements Listener {
     }
 
     public void end(TrialSession session, boolean victory) {
+        end(session, victory, true);
+    }
+
+    /** {@code penalize} = false for restarts and admin-ended trials, so nobody loses rank progress for those. */
+    public void end(TrialSession session, boolean victory, boolean penalize) {
         if (!sessions.remove(session)) return;
-        session.finish(victory, true);
+        session.finish(victory, true, penalize);
         mobIndex.values().removeIf(s -> s == session);
         if (victory && settings().victoryCooldown > 0) {
             cooldowns.put(session.regionKey(), System.currentTimeMillis() + settings().victoryCooldown * 1000L);

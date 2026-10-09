@@ -702,7 +702,7 @@ public final class TrialSession implements BossHost {
             if (present.contains(uuid)) continue;
             Player player = plugin.getServer().getPlayer(uuid);
             if (player == null) continue;
-            runs.computeIfAbsent(uuid, id -> new PlayerRun(id, player.getName()));
+            runs.computeIfAbsent(uuid, id -> newRun(id, player.getName()));
             if (settings().bossbar) player.showBossBar(bar);
             if (boss != null) player.showBossBar(boss.bar());
             if (announce) {
@@ -823,7 +823,7 @@ public final class TrialSession implements BossHost {
         }
 
         if (killer != null) {
-            PlayerRun run = runs.computeIfAbsent(killer.getUniqueId(), id -> new PlayerRun(id, killer.getName()));
+            PlayerRun run = runs.computeIfAbsent(killer.getUniqueId(), id -> newRun(id, killer.getName()));
             run.combo = ticks - run.lastKillTick <= comboWindow() ? run.combo + 1 : 1;
             run.lastKillTick = ticks;
             run.bestCombo = Math.max(run.bestCombo, run.combo);
@@ -862,9 +862,15 @@ public final class TrialSession implements BossHost {
                 Text.ph("keys", keys.getAmount()));
         for (Player player : players()) player.sendMessage(message);
         if (killer != null) {
-            PlayerRun run = runs.computeIfAbsent(killer.getUniqueId(), id -> new PlayerRun(id, killer.getName()));
+            PlayerRun run = runs.computeIfAbsent(killer.getUniqueId(), id -> newRun(id, killer.getName()));
             addScore(run, Math.round(settings().scoreElite * 2 * scoreMultiplier()));
         }
+    }
+
+    private PlayerRun newRun(UUID uuid, String name) {
+        PlayerRun run = new PlayerRun(uuid, name);
+        run.joinWave = Math.max(1, wave);
+        return run;
     }
 
     private void addScore(PlayerRun run, long points) {
@@ -1014,6 +1020,11 @@ public final class TrialSession implements BossHost {
 
     /** Called by the manager. Hides bars, removes the boss, sends summaries and records stats. */
     void finish(boolean victory, boolean announce) {
+        finish(victory, announce, true);
+    }
+
+    /** {@code penalize}: whether a failed run may cost rank progress (not for restarts or admin-ended trials). */
+    void finish(boolean victory, boolean announce, boolean penalize) {
         if (state == State.ENDED) return;
         state = State.ENDED;
         for (UUID uuid : runs.keySet()) {
@@ -1028,7 +1039,8 @@ public final class TrialSession implements BossHost {
         int reached = Math.max(1, wave);
         PlayerRun mvp = runs.values().stream().max(Comparator.comparingLong(r -> r.score)).orElse(null);
         for (PlayerRun run : runs.values()) {
-            List<String> records = plugin.stats().record(run, reached, victory, settings().progressionEnabled ? settings().maxRank : 0);
+            List<String> records = plugin.stats().record(run, reached, victory,
+                    settings().progressionEnabled ? settings().rankRules() : null, rank, penalize);
             Player player = plugin.getServer().getPlayer(run.uuid);
             if (player == null || !announce) continue;
             if (!victory) Text.send(player, "abandoned", Text.ph("wave", Text.roman(reached)));
@@ -1049,7 +1061,16 @@ public final class TrialSession implements BossHost {
             };
             for (String line : plugin.getConfig().getStringList("messages.summary")) player.sendMessage(Text.parse(line, resolvers));
             for (String record : records) {
-                if (record.startsWith("RANK:")) {
+                String[] part = record.split(":");
+                if (record.startsWith("PROGRESS:")) {
+                    Text.send(player, "rank-progress", Text.ph("have", part[1]), Text.ph("need", part[2]),
+                            Text.ph("stars", RankBadge.component(plugin.stats().rank(run.uuid) + 1)));
+                } else if (record.startsWith("NOPROGRESS:")) {
+                    Text.send(player, "rank-no-progress-" + part[1], Text.ph("have", part[2]), Text.ph("need", part[3]),
+                            Text.ph("max_deaths", settings().rankMaxDeaths), Text.ph("join_wave", settings().rankJoinByWave));
+                } else if (record.startsWith("LOST:")) {
+                    Text.send(player, "rank-progress-lost", Text.ph("have", part[1]), Text.ph("need", part[2]));
+                } else if (record.startsWith("RANK:")) {
                     int newRank = Integer.parseInt(record.substring(5));
                     Text.send(player, "rank-up", Text.ph("rank", Text.roman(newRank)), Text.ph("stars", RankBadge.component(newRank)));
                     if (settings().titles) Text.title(player, "rank-up-title", "rank-up-subtitle", 10, 60, 20, Text.ph("rank", Text.roman(newRank)), Text.ph("stars", RankBadge.component(newRank)));

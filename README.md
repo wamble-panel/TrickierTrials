@@ -28,11 +28,18 @@ the whole structure. For a custom-built chamber, it is the area around the spawn
 - **Ominous chambers.** Ominous spawners make bosses stronger and elites more common.
 
 ### Built for replaying
-- **Trial Rank (0-20).** Each conquered chamber raises a player's rank by one. A group plays at its
-  members' average rank. Every rank adds mob health, damage and elite chance, plus boss health.
-  From rank 3, bosses gain elite affixes (two from rank 6). In return, victories give more Trial
-  Keys and more score. Veterans can't steamroll, and new players aren't crushed when they play
-  together.
+- **Trial Rank (0-20), built to be a long grind.** Conquering chambers earns progress towards the next
+  rank:
+  - **Wins needed rise with rank.** Ranks 1-3 need 2 wins each, rising to 10 wins for rank 20, for
+    99 conquered chambers in total.
+  - **A win only counts if** the trial was at your own rank or higher, you died at most once, and you
+    were there by wave 2.
+  - **A failed trial costs 1 win of progress.** You never lose a whole rank.
+  - **Players always see their progress**, e.g. "3/5 wins", and why a win didn't count.
+
+  A group plays at its members' average rank. Every rank adds mob health, damage and elite chance,
+  plus boss health. From rank 5, bosses gain elite affixes, two from rank 10. In return, victories give
+  more Trial Keys and more score. All of these rules are configurable under `progression`.
 - **Run modifiers.** Every trial rolls modifiers, starting at 1 and gaining one per 3 ranks, up to 4.
   The pool is Bloodlust, Fortified, Frenzy, Elite Hunt, Gale, Leeching, Glass Cannon, Darkness,
   Famine, Unstable, Momentum and Golden Trial (double keys). Harder modifiers give more score.
@@ -137,9 +144,10 @@ placeholders are available for TAB, scoreboards, chat formats and menus:
 | `%trickiertrials_rank%` | `7` | Rank number (0-20) |
 | `%trickiertrials_rank_tier%` | `Gold` | Tier name |
 | `%trickiertrials_rank_roman%` | `VII` | Rank in roman numerals |
+| `%trickiertrials_progress%` / `%trickiertrials_progress_needed%` | `3` / `5` | Wins towards the next rank, and wins it needs |
 | `%trickiertrials_best_score%`, `_best_wave`, `_kills`, `_bosses`, `_victories`, `_runs` | `12840` | Personal records |
 
-Rank badges: Bronze `#CD7F32` (1-3), Silver `#C0C0C0` (4-6), Gold `#FFD700` (7-9), Emerald `#50C878`
+All `rank` placeholders are empty for players without a rank. Rank badges: Bronze `#CD7F32` (1-3), Silver `#C0C0C0` (4-6), Gold `#FFD700` (7-9), Emerald `#50C878`
 (10-12), Diamond `#5CE1E6` (13-15), Crystal `#E8B4FF` (16-19, with ✦ sparkles at 19) and the max rank 20
 with ✪ stars in a pink to purple to cyan gradient. Every badge and tier name can be changed under
 `rank-badges` and `rank-tiers` in `config.yml`.

@@ -101,6 +101,58 @@ public final class StatsStore {
         return records;
     }
 
+    /** Rules that decide whether a finished trial moves a player towards their next Trial Rank. */
+    public record RankRules(int maxRank, List<Integer> winsPerRank, boolean requireOwnRank, int maxDeaths,
+                            int joinByWave, int failurePenalty) {
+
+        /** Conquered chambers needed to reach {@code rank} from the rank below. */
+        public int winsFor(int rank) {
+            if (winsPerRank.isEmpty()) return 1;
+            return Math.max(1, winsPerRank.get(Math.max(0, Math.min(rank - 1, winsPerRank.size() - 1))));
+        }
+    }
+
+    /**
+     * Records a finished run and applies Trial Rank progress. The returned list holds personal-best descriptions
+     * plus one rank entry: "RANK:n", "PROGRESS:have:need", "NOPROGRESS:reason:have:need" or "LOST:have:need".
+     */
+    public List<String> record(PlayerRun run, int wave, boolean victory, RankRules rules, int trialRank, boolean penalize) {
+        List<String> records = record(run, wave, victory, 0);
+        ConfigurationSection s = section(run.uuid);
+        int rank = s.getInt("rank");
+        int progress = s.getInt("rank-progress");
+        if (rules == null || rank >= rules.maxRank()) return records;
+        int need = rules.winsFor(rank + 1);
+
+        if (victory) {
+            String reason = null;
+            if (rules.requireOwnRank() && trialRank < rank) reason = "below";
+            else if (rules.maxDeaths() >= 0 && run.deaths > rules.maxDeaths()) reason = "deaths";
+            else if (rules.joinByWave() > 0 && run.joinWave > rules.joinByWave()) reason = "late";
+            if (reason != null) {
+                records.add(0, "NOPROGRESS:" + reason + ":" + progress + ":" + need);
+            } else if (++progress >= need) {
+                s.set("rank", rank + 1);
+                s.set("rank-progress", 0);
+                records.add(0, "RANK:" + (rank + 1));
+            } else {
+                s.set("rank-progress", progress);
+                records.add(0, "PROGRESS:" + progress + ":" + need);
+            }
+        } else if (penalize && rules.failurePenalty() > 0 && progress > 0 && (run.kills > 0 || run.deaths > 0) && wave >= 2) {
+            progress = Math.max(0, progress - rules.failurePenalty());
+            s.set("rank-progress", progress);
+            records.add(0, "LOST:" + progress + ":" + need);
+        }
+        dirty = true;
+        return records;
+    }
+
+    public int rankProgress(UUID uuid) {
+        ConfigurationSection s = get(uuid);
+        return s == null ? 0 : s.getInt("rank-progress");
+    }
+
     public ConfigurationSection find(String nameOrUuid) {
         ConfigurationSection players = data.getConfigurationSection("players");
         if (players == null) return null;
