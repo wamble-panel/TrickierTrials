@@ -204,7 +204,9 @@ public final class GuardManager implements Listener {
         Entity source = damager instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter ? shooter : damager;
 
         Warden hit = wardenOf(event.getEntity());
-        if (hit != null && source instanceof Player player) hit.addParticipant(player);
+        if (hit != null && source instanceof Player player && event.getEntity() instanceof LivingEntity living) {
+            hit.addDamage(player, Math.min(event.getFinalDamage(), living.getHealth() + living.getAbsorptionAmount()));
+        }
 
         Warden attacker = wardenOf(source);
         if (attacker != null && event.getEntity() instanceof Player victim && attacker.boss() != null) attacker.boss().onMelee(victim);

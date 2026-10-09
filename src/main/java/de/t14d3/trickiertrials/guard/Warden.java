@@ -213,8 +213,8 @@ public final class Warden implements BossHost {
         boss = null;
     }
 
-    void addParticipant(Player player) {
-        participants.add(player.getUniqueId());
+    void addDamage(Player player, double amount) {
+        if (boss != null) boss.addDamage(player.getUniqueId(), amount);
     }
 
     /** Called when the warden is killed. */
@@ -223,12 +223,11 @@ public final class Warden implements BossHost {
         Location at = boss.entity().getLocation();
         hideBars();
         boss.cleanup(false);
+        // Only players who did their share of the damage earn the reward - standing nearby is not enough.
+        java.util.Map<UUID, Double> damage = boss.damageBy();
+        participants.clear();
+        participants.addAll(de.t14d3.trickiertrials.util.Contribution.contributors(damage, damage.size(), settings().minContribution));
         boss = null;
-
-        if (killer != null) participants.add(killer.getUniqueId());
-        for (Player player : at.getWorld().getPlayers()) {
-            if (player.getLocation().distanceSquared(at) <= 24 * 24) participants.add(player.getUniqueId());
-        }
         List<String> names = new ArrayList<>();
         for (UUID uuid : participants) {
             Player player = plugin.getServer().getPlayer(uuid);

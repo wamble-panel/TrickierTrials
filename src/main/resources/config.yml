@@ -315,6 +315,14 @@ holograms:
     - "<#9A9AA6>#9 <white>%trickiertrials_top_{category}_name_9% <dark_gray>- <#F7C873>%trickiertrials_top_{category}_value_9%"
     - "<#9A9AA6>#10 <white>%trickiertrials_top_{category}_name_10% <dark_gray>- <#F7C873>%trickiertrials_top_{category}_value_10%"
 
+# ──────────────────────────────── Rewards ───────────────────────────────────
+# Trial Keys go only to players who actually fought. A player counts as a contributor when the damage
+# they dealt is at least this share of the average damage per player in that fight (0.25 = a quarter
+# of an equal share). Standing nearby or AFK earns nothing. Applies to the Warden, bosses, victories,
+# Blitz waves and the Treasure Breeze (only players who hit it); elite keys go to the killer.
+rewards:
+  min-contribution: 0.25
+
 # ───────────────────────────── Score & combos ───────────────────────────────
 score:
   kill: 10
@@ -389,7 +397,7 @@ messages:
   wave-event: "<gold>✦</gold> <muted>Special wave:</muted> <event> <dark_gray>-</dark_gray> <muted><description></muted>"
   blitz-won: "<success>Blitz cleared in time!</success> <muted>Bonus reward granted.</muted>"
   blitz-failed: "<danger>Blitz failed</danger> <muted>- the timer ran out.</muted>"
-  treasure-caught: "<gold>✦</gold> <light><player></light> <muted>caught the Treasure Breeze!</muted> <gold><keys> Trial Key(s)</gold> <muted>dropped.</muted>"
+  treasure-caught: "<gold>✦</gold> <light><player></light> <muted>caught the Treasure Breeze!</muted> <gold><keys> Trial Key(s)</gold> <muted>each for the hunters.</muted>"
   treasure-escaped: "<muted>The Treasure Breeze escaped...</muted>"
   rank-progress: "<gold>✦</gold> <muted>Rank progress:</muted> <gold><have>/<need></gold> <muted>wins towards</muted> <stars>"
   rank-progress-lost: "<danger>Trial failed</danger> <muted>- rank progress dropped to</muted> <gold><have>/<need></gold>"
@@ -470,6 +478,7 @@ messages:
   hologram-created: "<success>Hologram <light><name></light> created.</success> <muted>Edit it with</muted> <copper>/hologram edit <name></copper>"
   hologram-missing: "<danger>FancyHolograms is not installed.</danger>"
   hologram-usage: "<muted>Usage:</muted> <copper>/trials hologram <weekly|lastweek|top <category>> [name]</copper>"
+  reward-no-contribution: "<muted>You didn't do enough damage in this fight to earn its Trial Key.</muted>"
   weekly-reset-done: "<success>Weekly leaderboard ended and prizes handed out.</success>"
 
   # Vaults

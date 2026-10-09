@@ -53,6 +53,7 @@ public final class Settings {
     public final double eliteHealthBonus;
     public final int eliteBonusExp;
     public final double eliteKeyChance;
+    public final double minContribution;
     public final Set<String> disabledAffixes = new HashSet<>();
 
     // Waves
@@ -200,6 +201,7 @@ public final class Settings {
         eliteHealthBonus = c.getDouble("elites.health-bonus", 0.40);
         eliteBonusExp = c.getInt("elites.bonus-exp", 15);
         eliteKeyChance = c.getDouble("elites.key-drop-chance", 0.04);
+        minContribution = c.getDouble("rewards.min-contribution", 0.25);
         for (String name : c.getStringList("elites.disabled-affixes")) disabledAffixes.add(name.toUpperCase(Locale.ROOT));
 
         killsBase = Math.max(1, c.getInt("waves.kills-base", 8));

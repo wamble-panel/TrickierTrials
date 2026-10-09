@@ -17,6 +17,8 @@ public final class PlayerRun {
     public long lastKillTick;
     /** The wave this player joined the trial on. */
     public int joinWave;
+    /** Damage dealt to trial mobs in this trial (decides who earns Trial Keys). */
+    public double damage;
 
     PlayerRun(UUID uuid, String name) {
         this.uuid = uuid;

@@ -96,6 +96,13 @@ Undying. Elites drop bonus XP and sometimes a Trial Key.
 - **Titles and sounds** for wave starts, wave clears, boss spawns, combo milestones and victories.
 - **End-of-run summary** listing score, kills, elites, bosses, best combo, deaths and the MVP.
 
+### Fair rewards
+Trial Keys only go to players who fought. Each player's damage is tracked, and a player earns keys
+when their damage reaches at least a quarter of the average per player in that fight
+(`rewards.min-contribution`). Standing nearby, AFK or landing one hit for the last blow earns nothing.
+Boss loot goes straight into the fighters' inventories instead of onto the floor. The Treasure Breeze
+pays everyone who hit it, and an elite's key goes to its killer.
+
 ### Score and combos
 Every kill scores points. Kills in quick succession build a combo multiplier, up to 3x by default.
 Dying costs points.

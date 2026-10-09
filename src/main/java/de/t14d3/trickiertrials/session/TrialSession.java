@@ -101,6 +101,7 @@ public final class TrialSession implements BossHost {
     private int eventTicks;
     private UUID treasure;
     private int darknessTicks;
+    private final Set<UUID> treasureHitters = new HashSet<>();
 
     TrialSession(TrickierTrials plugin, SessionManager manager, World world, BoundingBox region, String regionKey) {
         this.plugin = plugin;
@@ -857,13 +858,43 @@ public final class TrialSession implements BossHost {
         }
     }
 
+    /** Records damage a player dealt to one of this trial's mobs (used to decide who earns Trial Keys). */
+    void onPlayerDamage(Player player, LivingEntity target, double amount) {
+        if (amount <= 0 || state == State.ENDED) return;
+        PlayerRun run = runs.computeIfAbsent(player.getUniqueId(), id -> newRun(id, player.getName()));
+        run.damage += amount;
+        if (boss != null && boss.entity().getUniqueId().equals(target.getUniqueId())) boss.addDamage(player.getUniqueId(), amount);
+        if (target.getUniqueId().equals(treasure)) treasureHitters.add(player.getUniqueId());
+    }
+
+    /** Players who did their share of the fighting in this trial so far. */
+    private Set<UUID> contributors() {
+        java.util.Map<UUID, Double> damage = new java.util.HashMap<>();
+        for (PlayerRun run : runs.values()) damage.put(run.uuid, run.damage);
+        return de.t14d3.trickiertrials.util.Contribution.contributors(damage, playerCount(), settings().minContribution);
+    }
+
+    private void give(Player player, ItemStack item) {
+        if (item == null) return;
+        player.getInventory().addItem(item).values().forEach(left -> world.dropItemNaturally(player.getLocation(), left));
+    }
+
     private void treasureCaught(Location at, Player killer) {
-        ItemStack keys = new ItemStack(org.bukkit.Material.TRIAL_KEY, Math.max(1, (int) Math.round(playerCount() * rewardMultiplier())));
-        dropStacks(at, keys);
+        // Only the players who actually hit the Treasure Breeze share its keys.
+        if (killer != null) treasureHitters.add(killer.getUniqueId());
+        int each = Math.max(1, (int) Math.round(rewardMultiplier()));
+        List<String> names = new ArrayList<>();
+        for (UUID uuid : treasureHitters) {
+            Player hitter = plugin.getServer().getPlayer(uuid);
+            if (hitter == null) continue;
+            give(hitter, new ItemStack(org.bukkit.Material.TRIAL_KEY, each));
+            names.add(hitter.getName());
+        }
+        treasureHitters.clear();
         world.spawnParticle(Particle.WAX_ON, at.clone().add(0, 1, 0), 60, 0.8, 0.8, 0.8, 0.2);
         Fx.sound(players(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.6f);
-        Component message = Text.prefixed("treasure-caught", Text.ph("player", killer != null ? killer.getName() : "the chamber"),
-                Text.ph("keys", keys.getAmount()));
+        Component message = Text.prefixed("treasure-caught", Text.ph("player", names.isEmpty() ? "the chamber" : String.join(", ", names)),
+                Text.ph("keys", each));
         for (Player player : players()) player.sendMessage(message);
         if (killer != null) {
             PlayerRun run = runs.computeIfAbsent(killer.getUniqueId(), id -> newRun(id, killer.getName()));
@@ -885,17 +916,17 @@ public final class TrialSession implements BossHost {
     private void waveCleared() {
         Collection<Player> players = players();
         boolean blitzWon = event == WaveEvent.BLITZ && eventTicks > 0;
+        Set<UUID> helped = blitzWon ? contributors() : Set.of();
         long clearPoints = Math.round(settings().scoreWaveClear * scoreMultiplier() * (blitzWon ? 2 : 1));
         for (Player player : players) {
             PlayerRun run = runs.get(player.getUniqueId());
             if (run != null) addScore(run, clearPoints);
             if (!has(Modifier.FAMINE)) heal(player, settings().waveClearHeal);
-            if (blitzWon) {
-                for (Settings.Reward reward : settings().blitzRewards) {
-                    ItemStack item = reward.roll(has(Modifier.GOLDEN) ? 2 : 1);
-                    if (item != null) player.getInventory().addItem(item).values().forEach(left -> world.dropItemNaturally(player.getLocation(), left));
-                }
+            if (blitzWon && helped.contains(player.getUniqueId())) {
+                for (Settings.Reward reward : settings().blitzRewards) give(player, reward.roll(has(Modifier.GOLDEN) ? 2 : 1));
                 Text.send(player, "blitz-won");
+            } else if (blitzWon) {
+                Text.send(player, "reward-no-contribution");
             }
         }
         if (treasure != null) {
@@ -903,6 +934,7 @@ public final class TrialSession implements BossHost {
             if (breeze != null) breeze.remove();
             treasure = null;
         }
+        treasureHitters.clear();
         event = null;
         clearLeftoverMobs();
         if (isFinalWave(wave)) {
@@ -953,7 +985,15 @@ public final class TrialSession implements BossHost {
         Location location = defeated.entity().getLocation();
         Collection<Player> players = players();
         double multiplier = playerCount();
-        for (Settings.Reward reward : settings().bossRewards) dropStacks(location, reward.roll(multiplier * (has(Modifier.GOLDEN) ? 2 : 1)));
+        // Boss loot goes straight into the inventories of the players who fought it.
+        Set<UUID> fighters = de.t14d3.trickiertrials.util.Contribution.contributors(defeated.damageBy(), playerCount(), settings().minContribution);
+        for (Player player : players) {
+            if (!fighters.contains(player.getUniqueId())) {
+                Text.send(player, "reward-no-contribution");
+                continue;
+            }
+            for (Settings.Reward reward : settings().bossRewards) give(player, reward.roll(has(Modifier.GOLDEN) ? 2 : 1));
+        }
         int experience = (int) (settings().bossExperience * multiplier);
         while (experience > 0) {
             int orb = Math.min(experience, 25);
@@ -1004,14 +1044,15 @@ public final class TrialSession implements BossHost {
 
     private void victory() {
         Collection<Player> players = players();
+        Set<UUID> helped = contributors();
         for (Player player : players) {
             PlayerRun run = runs.get(player.getUniqueId());
             if (run != null) addScore(run, Math.round(settings().scoreVictory * scoreMultiplier()));
-            for (Settings.Reward reward : settings().victoryRewards) {
-                ItemStack item = reward.roll(rewardMultiplier());
-                if (item == null) continue;
-                player.getInventory().addItem(item).values().forEach(left -> world.dropItemNaturally(player.getLocation(), left));
+            if (!helped.contains(player.getUniqueId())) {
+                Text.send(player, "reward-no-contribution");
+                continue;
             }
+            for (Settings.Reward reward : settings().victoryRewards) give(player, reward.roll(rewardMultiplier()));
         }
         if (settings().titles) {
             Text.title(Audience.audience(players), "victory-title", "victory-subtitle", 10, 80, 20,

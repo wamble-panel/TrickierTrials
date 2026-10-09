@@ -64,6 +64,7 @@ public final class TrialBoss {
     private final BossBar bar;
     private final Set<Location> webs = new HashSet<>();
 
+    private final java.util.Map<java.util.UUID, Double> damageBy = new java.util.HashMap<>();
     private boolean enraged;
     private boolean firstMinions;
     private boolean secondMinions;
@@ -192,6 +193,15 @@ public final class TrialBoss {
 
     public long fightMillis() {
         return System.currentTimeMillis() - spawnedAt;
+    }
+
+    public void addDamage(java.util.UUID player, double amount) {
+        damageBy.merge(player, amount, Double::sum);
+    }
+
+    /** Damage dealt to this boss by each player. */
+    public java.util.Map<java.util.UUID, Double> damageBy() {
+        return damageBy;
     }
 
     /** Pulls the boss back to {@code home} whenever it gets further away than {@code range}. */

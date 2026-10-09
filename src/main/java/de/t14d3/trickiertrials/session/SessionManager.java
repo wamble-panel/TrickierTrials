@@ -216,7 +216,13 @@ public final class SessionManager implements Listener {
 
         if (elite) {
             event.setDroppedExp(event.getDroppedExp() + settings().eliteBonusExp);
-            if (ThreadLocalRandom.current().nextDouble() < settings().eliteKeyChance) event.getDrops().add(new ItemStack(Material.TRIAL_KEY));
+            if (ThreadLocalRandom.current().nextDouble() < settings().eliteKeyChance) {
+                // The key goes to the player who slew the elite, not to whoever picks it up first.
+                Player killer = entity.getKiller();
+                if (killer != null) killer.getInventory().addItem(new ItemStack(Material.TRIAL_KEY)).values()
+                        .forEach(left -> killer.getWorld().dropItemNaturally(killer.getLocation(), left));
+                else event.getDrops().add(new ItemStack(Material.TRIAL_KEY));
+            }
             plugin.affixes().onEliteDeath(entity, child -> {
                 if (session != null) session.registerMinion(child);
                 else MobScaler.apply(child, new MobScaler.Context(MobScaler.Tier.DEFAULT, 1, 1, false), settings(), false);
@@ -265,6 +271,19 @@ public final class SessionManager implements Listener {
             var max = mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
             if (max != null) mob.setHealth(Math.min(max.getValue(), mob.getHealth() + event.getFinalDamage() * 0.5));
         }
+    }
+
+    /** Tracks how much damage each player deals to trial mobs, so rewards go to the players who fought. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onContribution(EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity target) || target instanceof Player) return;
+        TrialSession session = mobIndex.get(target.getUniqueId());
+        if (session == null) return;
+        Entity damager = event.getDamager();
+        Entity source = damager instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter ? shooter : damager;
+        if (!(source instanceof Player player)) return;
+        double dealt = Math.min(event.getFinalDamage(), target.getHealth() + target.getAbsorptionAmount());
+        session.onPlayerDamage(player, target, dealt);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
