@@ -16,6 +16,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.List;
 
 public final class TrickierTrials extends JavaPlugin {
 
@@ -80,6 +81,7 @@ public final class TrickierTrials extends JavaPlugin {
             }
         }
         boolean upgraded = upgradeToV3();
+        upgraded |= upgradeToV4();
         if (missing || upgraded) {
             getConfig().options().copyDefaults(true);
             saveConfig();
@@ -114,6 +116,26 @@ public final class TrickierTrials extends JavaPlugin {
         }
         c.set("config-version", 3);
         getLogger().info("Updated config.yml to version 3 (Trial Rank now goes up to 20, rank badges added).");
+        return true;
+    }
+
+    /** v4 replaced the three-star rank badges with a single symbol per rank (only if the old defaults are unchanged). */
+    private boolean upgradeToV4() {
+        var c = getConfig();
+        if (!c.isSet("config-version") || c.getInt("config-version") >= 4) return false;
+        List<String> current = c.getStringList("rank-badges");
+        List<String> oldDefault = List.of("", "&#CD7F32★", "&#CD7F32★★", "&#CD7F32★★★", "&#C0C0C0★&#CD7F32★★",
+                "&#C0C0C0★★&#CD7F32★", "&#C0C0C0★★★", "&#FFD700★&#C0C0C0★★", "&#FFD700★★&#C0C0C0★", "&#FFD700★★★",
+                "&#50C878★&#FFD700★★", "&#50C878★★&#FFD700★", "&#50C878★★★", "&#5CE1E6★&#50C878★★", "&#5CE1E6★★&#50C878★",
+                "&#5CE1E6★★★", "&#E8B4FF★&#5CE1E6★★", "&#E8B4FF★★&#5CE1E6★", "&#E8B4FF★★★", "&#E8B4FF✦&#FFFFFF✦&#E8B4FF✦",
+                "&#FF7EB3✪&#B47EFF✪&#7EE0FF✪");
+        boolean isOld = current.size() == oldDefault.size()
+                && (current.equals(oldDefault) || current.subList(1, current.size()).equals(oldDefault.subList(1, oldDefault.size())));
+        if (isOld) {
+            c.set("rank-badges", null);
+            getLogger().info("Updated rank badges to the single-symbol design.");
+        }
+        c.set("config-version", 4);
         return true;
     }
 

@@ -7,7 +7,7 @@
 # Every palette colour below can be used as a tag (<copper>text</copper>) and inside
 # gradients (<gradient:copper:gold>text</gradient>).
 
-config-version: 3
+config-version: 4
 
 palette:
   copper: "#E8875B"   # warm copper - main accent
@@ -110,6 +110,7 @@ waves:
   intermission: 6              # seconds between waves
   wave-clear-heal: 6.0         # health restored to every player when a wave is cleared
   reinforcements: true
+  clear-mobs-on-wave-clear: true # leftover trial mobs vanish when a wave is cleared
   reinforcement-delay: 5       # seconds without living mobs before spawners are woken / reinforcements arrive
   wake-spawners: true          # reactivate the chamber's own trial spawners for every wave
   # If no trial spawner near the players can be woken (or the wave is stuck for 45s), spawn
@@ -180,30 +181,31 @@ progression:
   reward-bonus-per-rank: 0.15    # victory Trial Keys x(1 + 0.15 per rank)
   score-bonus-per-rank: 0.06
 
-# Star badge for every rank (index = rank, 0-20). &#RRGGBB colours. Shown in /trials and through
+# Badge for every rank (index = rank, 0-20). One symbol: the SHAPE shows the tier, the brightness
+# shows the step inside it (dim -> normal -> bright). &#RRGGBB colours. Shown in /trials and through
 # the PlaceholderAPI placeholders %trickiertrials_rank_stars% / %trickiertrials_rank_stars_hex%.
 rank-badges:
-  - ""                                 # 0  unranked (shows nothing)
-  - "&#CD7F32★"                        # 1  Bronze
-  - "&#CD7F32★★"                       # 2
-  - "&#CD7F32★★★"                      # 3
-  - "&#C0C0C0★&#CD7F32★★"              # 4  Silver
-  - "&#C0C0C0★★&#CD7F32★"              # 5
-  - "&#C0C0C0★★★"                      # 6
-  - "&#FFD700★&#C0C0C0★★"              # 7  Gold
-  - "&#FFD700★★&#C0C0C0★"              # 8
-  - "&#FFD700★★★"                      # 9
-  - "&#50C878★&#FFD700★★"              # 10 Emerald
-  - "&#50C878★★&#FFD700★"              # 11
-  - "&#50C878★★★"                      # 12
-  - "&#5CE1E6★&#50C878★★"              # 13 Diamond
-  - "&#5CE1E6★★&#50C878★"              # 14
-  - "&#5CE1E6★★★"                      # 15
-  - "&#E8B4FF★&#5CE1E6★★"              # 16 Crystal
-  - "&#E8B4FF★★&#5CE1E6★"              # 17
-  - "&#E8B4FF★★★"                      # 18
-  - "&#E8B4FF✦&#FFFFFF✦&#E8B4FF✦"      # 19 Crystal sparkle
-  - "&#FF7EB3✪&#B47EFF✪&#7EE0FF✪"      # 20 max rank
+  - ""                  # 0  unranked (shows nothing)
+  - "&#9C6A3C✧"         # 1  Bronze
+  - "&#CD7F32✧"         # 2
+  - "&#E8A060✧"         # 3
+  - "&#8F8F8F✦"         # 4  Silver
+  - "&#C0C0C0✦"         # 5
+  - "&#E6E6E6✦"         # 6
+  - "&#C9A800★"         # 7  Gold
+  - "&#FFD700★"         # 8
+  - "&#FFE866★"         # 9
+  - "&#3A9A5C❖"         # 10 Emerald
+  - "&#50C878❖"         # 11
+  - "&#8AE6A8❖"         # 12
+  - "&#3FA8AD◆"         # 13 Diamond
+  - "&#5CE1E6◆"         # 14
+  - "&#A6F3F5◆"         # 15
+  - "&#B07ACB✵"         # 16 Crystal
+  - "&#E8B4FF✵"         # 17
+  - "&#F4DAFF✵"         # 18
+  - "&#FFFFFF✵"         # 19 Crystal (pure white)
+  - "&#FF7EB3✪"         # 20 max rank
 # Tier name for every rank (index = rank), for %trickiertrials_rank_tier%.
 rank-tiers: [Unranked, Bronze, Bronze, Bronze, Silver, Silver, Silver, Gold, Gold, Gold,
              Emerald, Emerald, Emerald, Diamond, Diamond, Diamond, Crystal, Crystal, Crystal, Crystal, Prismatic]

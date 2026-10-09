@@ -274,14 +274,14 @@ public final class TrialSession implements BossHost {
         if (announce && settings().titles) {
             if (event != null) {
                 Text.title(Audience.audience(players), "wave-start-title", "wave-event-subtitle", 5, 45, 10,
-                        Text.ph("wave", Text.roman(wave)), Text.ph("event", eventLabel()), Text.ph("description", event.description()));
+                        Text.ph("wave", Text.roman(wave)), Text.ph("event", Text.parse(eventLabel())), Text.ph("description", event.description()));
             } else {
                 Text.title(Audience.audience(players), "wave-start-title", "wave-start-subtitle", 5, 35, 10,
                         Text.ph("wave", Text.roman(wave)), Text.ph("target", waveTarget));
             }
         }
         if (event != null) {
-            Component message = Text.prefixed("wave-event", Text.ph("event", eventLabel()), Text.ph("description", event.description()));
+            Component message = Text.prefixed("wave-event", Text.ph("event", Text.parse(eventLabel())), Text.ph("description", event.description()));
             for (Player player : players) player.sendMessage(message);
         }
         if (announce) Fx.sound(players, event != null ? Sound.BLOCK_BELL_RESONATE : Sound.EVENT_RAID_HORN, 0.6f, 1.2f);
@@ -900,6 +900,7 @@ public final class TrialSession implements BossHost {
             treasure = null;
         }
         event = null;
+        clearLeftoverMobs();
         if (isFinalWave(wave)) {
             victory();
             return;
@@ -914,6 +915,19 @@ public final class TrialSession implements BossHost {
         for (Player player : players) {
             world.spawnParticle(Particle.HAPPY_VILLAGER, player.getLocation().add(0, 1, 0), 12, 0.4, 0.6, 0.4, 0);
         }
+    }
+
+    /** A cleared wave is really over: the trial mobs still standing vanish (the boss is handled separately). */
+    private void clearLeftoverMobs() {
+        if (!settings().clearMobsOnWaveClear) return;
+        for (UUID uuid : List.copyOf(mobs)) {
+            Entity entity = plugin.getServer().getEntity(uuid);
+            if (entity == null || !entity.isValid() || (boss != null && boss.entity().equals(entity))) continue;
+            world.spawnParticle(Particle.POOF, entity.getLocation().add(0, 0.8, 0), 10, 0.3, 0.5, 0.3, 0.02);
+            world.spawnParticle(Particle.TRIAL_SPAWNER_DETECTION, entity.getLocation().add(0, 0.2, 0), 4, 0.3, 0.1, 0.3, 0);
+            entity.remove();
+        }
+        mobs.clear();
     }
 
     private static void heal(Player player, double amount) {

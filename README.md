@@ -139,17 +139,18 @@ placeholders are available for TAB, scoreboards, chat formats and menus:
 
 | Placeholder | Example | Description |
 |---|---|---|
-| `%trickiertrials_rank_stars%` | ★★★ (coloured) | Rank badge with colours |
-| `%trickiertrials_rank_stars_hex%` | `&#C0C0C0★&#CD7F32★★` | Badge as written in the config, for plugins that read `&#RRGGBB` themselves |
+| `%trickiertrials_rank_stars%` | ★ (coloured) | Rank badge with colours |
+| `%trickiertrials_rank_stars_hex%` | `&#FFD700★` | Badge as written in the config, for plugins that read `&#RRGGBB` themselves |
 | `%trickiertrials_rank%` | `7` | Rank number (0-20) |
 | `%trickiertrials_rank_tier%` | `Gold` | Tier name |
 | `%trickiertrials_rank_roman%` | `VII` | Rank in roman numerals |
 | `%trickiertrials_progress%` / `%trickiertrials_progress_needed%` | `3` / `5` | Wins towards the next rank, and wins it needs |
 | `%trickiertrials_best_score%`, `_best_wave`, `_kills`, `_bosses`, `_victories`, `_runs` | `12840` | Personal records |
 
-All `rank` placeholders are empty for players without a rank. Rank badges: Bronze `#CD7F32` (1-3), Silver `#C0C0C0` (4-6), Gold `#FFD700` (7-9), Emerald `#50C878`
-(10-12), Diamond `#5CE1E6` (13-15), Crystal `#E8B4FF` (16-19, with ✦ sparkles at 19) and the max rank 20
-with ✪ stars in a pink to purple to cyan gradient. Every badge and tier name can be changed under
+All `rank` placeholders are empty for players without a rank. Each rank shows a single symbol. The
+shape gives the tier and the brightness gives the step inside it (dim, normal, bright):
+Bronze ✧ (1-3), Silver ✦ (4-6), Gold ★ (7-9), Emerald ❖ (10-12), Diamond ◆ (13-15), Crystal ✵ (16-19,
+pure white at 19) and ✪ for max rank 20. Every badge and tier name can be changed under
 `rank-badges` and `rank-tiers` in `config.yml`.
 
 ## Configuration

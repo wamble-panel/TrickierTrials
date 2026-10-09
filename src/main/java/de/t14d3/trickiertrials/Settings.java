@@ -66,6 +66,7 @@ public final class Settings {
     public final int intermission;
     public final double waveClearHeal;
     public final boolean reinforcements;
+    public final boolean clearMobsOnWaveClear;
     public final boolean wakeSpawners;
     public final boolean fallbackSpawns;
     public final boolean spawnerRewardsOnce;
@@ -202,6 +203,7 @@ public final class Settings {
         intermission = Math.max(1, c.getInt("waves.intermission", 6));
         waveClearHeal = c.getDouble("waves.wave-clear-heal", 6.0);
         reinforcements = c.getBoolean("waves.reinforcements", true);
+        clearMobsOnWaveClear = c.getBoolean("waves.clear-mobs-on-wave-clear", true);
         wakeSpawners = c.getBoolean("waves.wake-spawners", true);
         fallbackSpawns = c.getBoolean("waves.fallback-spawns", true);
         spawnerRewardsOnce = c.getBoolean("waves.spawner-rewards-once", true);
