@@ -626,6 +626,27 @@ public final class TrialSession implements BossHost {
         return woken;
     }
 
+    /**
+     * A conquered chamber goes quiet: spawners still busy with their set of mobs are sent into cooldown,
+     * so nothing trickles out after the victory. They wake up again when the chamber's rest is over.
+     */
+    private void silenceSpawners() {
+        long now = world.getGameTime();
+        long rest = Math.max(20L, settings().victoryCooldown * 20L);
+        for (Location location : spawners.keySet()) {
+            var state = spawnerState(location);
+            if (state != org.bukkit.block.data.type.TrialSpawner.State.ACTIVE
+                    && state != org.bukkit.block.data.type.TrialSpawner.State.WAITING_FOR_PLAYERS) continue;
+            if (!(location.getBlock().getState() instanceof TrialSpawner spawner)) continue;
+            if (!(spawner.getBlockData() instanceof org.bukkit.block.data.type.TrialSpawner data)) continue;
+            spawner.setCooldownEnd(now + rest);
+            data.setTrialSpawnerState(org.bukkit.block.data.type.TrialSpawner.State.COOLDOWN);
+            spawner.setBlockData(data);
+            spawner.update(true, false);
+            world.spawnParticle(Particle.SMOKE, location.clone().add(0.5, 1, 0.5), 10, 0.3, 0.2, 0.3, 0.01);
+        }
+    }
+
     /** Vanilla spawner loot is paid once per spawner per encounter, so waking spawners can't be farmed. */
     boolean claimSpawnerReward(Location spawner) {
         return rewardedSpawners.add(spawner);
@@ -936,6 +957,7 @@ public final class TrialSession implements BossHost {
         }
         treasureHitters.clear();
         event = null;
+        if (isFinalWave(wave)) silenceSpawners();
         clearLeftoverMobs();
         if (isFinalWave(wave)) {
             victory();
