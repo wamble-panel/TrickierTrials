@@ -151,7 +151,8 @@ public final class Text {
 
     public static String duration(long millis) {
         long seconds = Math.max(0, millis / 1000);
-        long h = seconds / 3600, m = (seconds % 3600) / 60, s = seconds % 60;
+        long d = seconds / 86400, h = (seconds % 86400) / 3600, m = (seconds % 3600) / 60, s = seconds % 60;
+        if (d > 0) return d + "d " + h + "h";
         if (h > 0) return h + "h " + m + "m";
         if (m > 0) return m + "m " + s + "s";
         return s + "s";

@@ -59,7 +59,6 @@ public final class StatsStore {
         return section != null ? section : data.createSection("players." + uuid);
     }
 
-    /** Records a finished run. Returns the descriptions of any personal bests that were beaten. */
     /** Direct lookup by UUID (fast - used by placeholders). */
     public ConfigurationSection get(UUID uuid) {
         return data.getConfigurationSection("players." + uuid);
@@ -164,7 +163,21 @@ public final class StatsStore {
         return null;
     }
 
+    private final java.util.Map<Category, List<Entry>> topCache = new java.util.EnumMap<>(Category.class);
+    private long topCacheTime;
+
+    /** Leaderboard, cached for 30 seconds (holograms and placeholders ask for it constantly). */
     public List<Entry> top(Category category, int limit) {
+        long now = System.currentTimeMillis();
+        if (now - topCacheTime > 30_000) {
+            topCache.clear();
+            topCacheTime = now;
+        }
+        List<Entry> all = topCache.computeIfAbsent(category, c -> computeTop(c, 100));
+        return all.subList(0, Math.min(limit, all.size()));
+    }
+
+    private List<Entry> computeTop(Category category, int limit) {
         ConfigurationSection players = data.getConfigurationSection("players");
         if (players == null) return List.of();
         List<Entry> entries = new ArrayList<>();
@@ -175,7 +188,7 @@ public final class StatsStore {
             if (value > 0) entries.add(new Entry(s.getString("name", key.substring(0, 8)), value));
         }
         entries.sort(Comparator.comparingLong(Entry::value).reversed().thenComparing(e -> e.name().toLowerCase(Locale.ROOT)));
-        return entries.subList(0, Math.min(limit, entries.size()));
+        return List.copyOf(entries.subList(0, Math.min(limit, entries.size())));
     }
 
     /** Writes the file asynchronously if anything changed. */

@@ -46,6 +46,7 @@ public final class TrialsCommand implements TabExecutor {
             case "info" -> info(sender);
             case "stats" -> stats(sender, args.length > 1 ? args[1] : null);
             case "top" -> top(sender, args.length > 1 ? args[1] : "score");
+            case "weekly" -> weekly(sender, args);
             case "boss" -> boss(sender, args);
             case "warden" -> warden(sender, args);
             case "rank" -> rank(sender, args);
@@ -166,6 +167,33 @@ public final class TrialsCommand implements TabExecutor {
         if (plugin.sessions().summonBoss(player, type) == null) Text.send(sender, "not-in-session");
     }
 
+    private void weekly(CommandSender sender, String[] args) {
+        var weekly = plugin.weekly();
+        if (args.length > 1 && args[1].equalsIgnoreCase("reset")) {
+            if (!checkAdmin(sender)) return;
+            weekly.forceReset();
+            Text.send(sender, "weekly-reset-done");
+            return;
+        }
+        sender.sendMessage(Text.parse(Text.raw("weekly-header"), Text.ph("time", Text.duration(weekly.millisUntilReset()))));
+        var list = weekly.standings();
+        if (list.isEmpty()) {
+            sender.sendMessage(Text.msg("weekly-empty"));
+        }
+        for (int i = 0; i < Math.min(10, list.size()); i++) {
+            var entry = list.get(i);
+            String color = i < RANK_COLORS.length ? RANK_COLORS[i] : "muted";
+            sender.sendMessage(Text.parse(Text.raw("weekly-entry").replace("<rank_color>", "<" + color + ">").replace("</rank_color>", "</" + color + ">"),
+                    Text.ph("rank", i + 1), Text.ph("name", entry.name()), Text.ph("score", Text.number(entry.score())),
+                    Text.ph("wins", entry.wins())));
+        }
+        if (sender instanceof Player player) {
+            int position = weekly.position(player.getUniqueId());
+            sender.sendMessage(Text.msg("weekly-self", Text.ph("position", position == 0 ? "-" : "#" + position),
+                    Text.ph("score", Text.number(weekly.score(player.getUniqueId())))));
+        }
+    }
+
     /** /trials rank <player> <rank> - set a player's Trial Rank. */
     private void rank(CommandSender sender, String[] args) {
         if (!checkAdmin(sender)) return;
@@ -260,13 +288,16 @@ public final class TrialsCommand implements TabExecutor {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> options = new ArrayList<>();
         if (args.length == 1) {
-            options.addAll(List.of("info", "stats", "top"));
+            options.addAll(List.of("info", "stats", "top", "weekly"));
             if (sender.hasPermission(ADMIN)) options.addAll(List.of("boss", "warden", "rank", "end", "reload"));
         } else if (args.length == 2) {
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "top" -> Arrays.stream(StatsStore.Category.values()).forEach(c -> options.add(c.name().toLowerCase(Locale.ROOT)));
                 case "boss" -> Arrays.stream(BossType.values()).forEach(b -> options.add(b.id()));
                 case "stats", "rank" -> plugin.getServer().getOnlinePlayers().forEach(p -> options.add(p.getName()));
+                case "weekly" -> {
+                    if (sender.hasPermission(ADMIN)) options.add("reset");
+                }
                 case "warden" -> options.addAll(List.of("create", "point", "clearpoints", "respawn", "open", "remove", "list"));
                 default -> {
                 }

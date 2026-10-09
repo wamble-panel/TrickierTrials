@@ -119,6 +119,7 @@ the Paper API and no longer needs server internals.
 |---------|-------------|------------|
 | `/trials info` | Shows your current encounter | – |
 | `/trials stats [player]` | Shows personal records | – |
+| `/trials weekly` | This week's leaderboard, your position and time left | – |
 | `/trials top [score\|wave\|kills\|bosses\|victories\|rank]` | Shows the leaderboard | – |
 | `/trials boss <type>` | Summons a boss in your encounter, or starts an encounter if you're not in one | `trickiertrials.admin` |
 | `/trials warden create <name>` | Creates a Warden with its post at your position | `trickiertrials.admin` |
@@ -133,6 +134,32 @@ the Paper API and no longer needs server internals.
 
 The command can also be typed as `/trickiertrials` or `/tt`.
 
+## Weekly leaderboard
+Every trial adds its score to the player's weekly total (`weekly.metric: best` counts only the best
+single run instead). The board resets every week, by default on Monday at 00:00 UTC; set the day, time
+and `timezone` under `weekly`. When a week ends:
+- The top 3 players get their prizes. By default these are 6, 4 and 2 Trial Keys. Players who are
+  offline receive them on their next join.
+- Optional console `commands` run for each winner (`%player%`, `%place%`).
+- The winners are announced and the final standings are kept as "last week".
+
+`/trials weekly` shows the standings, your position and the time left. `/trials weekly reset`
+(admin) ends the week immediately and pays out the prizes.
+
+### FancyHolograms example
+With PlaceholderAPI installed, FancyHolograms can show the board live:
+```
+/hologram create text trials_weekly
+/hologram edit trials_weekly setLine 1 <gradient:#E8875B:#F7C873><b>WEEKLY TRIALS</b></gradient>
+/hologram edit trials_weekly addLine <gray>Resets in <white>%trickiertrials_weekly_reset%
+/hologram edit trials_weekly addLine <#FFD700>#1 <white>%trickiertrials_weekly_name_1% <gray>- <#F7C873>%trickiertrials_weekly_score_1%
+/hologram edit trials_weekly addLine <#C0C0C0>#2 <white>%trickiertrials_weekly_name_2% <gray>- <#F7C873>%trickiertrials_weekly_score_2%
+/hologram edit trials_weekly addLine <#CD7F32>#3 <white>%trickiertrials_weekly_name_3% <gray>- <#F7C873>%trickiertrials_weekly_score_3%
+/hologram edit trials_weekly addLine <gray>You: <white>#%trickiertrials_weekly_position% <gray>- <#F7C873>%trickiertrials_weekly_score%
+/hologram edit trials_weekly updateTextInterval 5s
+```
+Command names can differ slightly between FancyHolograms versions; check `/hologram help`.
+
 ## PlaceholderAPI
 If [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) is installed, these
 placeholders are available for TAB, scoreboards, chat formats and menus:
@@ -145,6 +172,11 @@ placeholders are available for TAB, scoreboards, chat formats and menus:
 | `%trickiertrials_rank_tier%` | `Gold` | Tier name |
 | `%trickiertrials_rank_roman%` | `VII` | Rank in roman numerals |
 | `%trickiertrials_progress%` / `%trickiertrials_progress_needed%` | `3` / `5` | Wins towards the next rank, and wins it needs |
+| `%trickiertrials_weekly_name_<1-10>%` / `_weekly_score_<n>` / `_weekly_wins_<n>` | `kirito2524` / `12,840` / `3` | This week's leaderboard |
+| `%trickiertrials_weekly_score%` / `%trickiertrials_weekly_position%` | `4,210` / `5` | The viewer's own weekly score and place |
+| `%trickiertrials_weekly_reset%` | `2d 5h` | Time until the weekly reset |
+| `%trickiertrials_lastweek_name_<n>%` / `_lastweek_score_<n>` | | Last week's final standings |
+| `%trickiertrials_top_<score\|wave\|kills\|bosses\|victories\|rank>_name_<n>%` / `_value_<n>` | | Lifetime leaderboards |
 | `%trickiertrials_best_score%`, `_best_wave`, `_kills`, `_bosses`, `_victories`, `_runs` | `12840` | Personal records |
 
 All `rank` placeholders are empty for players without a rank. Each rank shows a single symbol. The

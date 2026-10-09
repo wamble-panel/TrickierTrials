@@ -253,6 +253,30 @@ warden:
   rewards:
     - "TRIAL_KEY 1 1.0"
 
+# ──────────────────────────── Weekly leaderboard ────────────────────────────
+# Every trial adds its score to the player's weekly total. When the week ends, the top players get
+# their prizes (items are handed out on their next join if offline) and the board starts fresh.
+# Show it anywhere with PlaceholderAPI, e.g. in FancyHolograms:
+#   %trickiertrials_weekly_name_1%  %trickiertrials_weekly_score_1%  %trickiertrials_weekly_reset%
+weekly:
+  enabled: true
+  metric: total                  # total = all trial score this week, best = best single run
+  reset-day: MONDAY
+  reset-time: "00:00"
+  timezone: "UTC"                # e.g. Europe/Berlin, Asia/Riyadh, America/New_York
+  min-score: 1                   # score needed to receive a prize
+  empty-slot: "-"                # shown for empty leaderboard places
+  prizes:
+    1:
+      items: ["TRIAL_KEY 6 1.0"]
+      commands: []               # run from console, e.g. "lp user %player% permission settemp title.weekly true 7d"
+    2:
+      items: ["TRIAL_KEY 4 1.0"]
+      commands: []
+    3:
+      items: ["TRIAL_KEY 2 1.0"]
+      commands: []
+
 # ───────────────────────────── Score & combos ───────────────────────────────
 score:
   kill: 10
@@ -299,6 +323,7 @@ messages:
     - "<copper>/trials info</copper> <muted>- your current encounter</muted>"
     - "<copper>/trials stats [player]</copper> <muted>- personal records</muted>"
     - "<copper>/trials top [score|wave|kills|bosses|victories|rank]</copper> <muted>- leaderboard</muted>"
+    - "<copper>/trials weekly</copper> <muted>- this week's leaderboard</muted>"
     - "<copper>/trials rank <player> <0-20></copper> <muted>- set a Trial Rank (admin)</muted>"
     - "<copper>/trials boss <type></copper> <muted>- summon a boss (admin)</muted>"
     - "<copper>/trials warden <create|point|respawn|open|remove|list> <name></copper> <muted>- chamber guard (admin)</muted>"
@@ -395,6 +420,15 @@ messages:
   warden-none: "<muted>No wardens yet. Stand in your corridor and use</muted> <copper>/trials warden create <name></copper>"
   warden-list-entry: "<copper><name></copper> <dark_gray>·</dark_gray> <light><state></light> <dark_gray>·</dark_gray> <muted><points> points · <location></muted>"
   warden-usage: "<muted>Usage:</muted> <copper>/trials warden <create|point|clearpoints|respawn|open|remove|list> <name></copper>"
+
+  # Weekly leaderboard
+  weekly-header: "<gradient:copper:gold><bold>Weekly Trial Leaderboard</bold></gradient> <muted>· resets in</muted> <light><time></light>"
+  weekly-entry: " <rank_color>#<rank></rank_color> <light><name></light> <dark_gray>-</dark_gray> <gold><score></gold> <muted>(<wins> wins)</muted>"
+  weekly-empty: "<muted>Nobody has scored this week yet - be the first!</muted>"
+  weekly-self: "<muted>You:</muted> <light><position></light> <dark_gray>·</dark_gray> <gold><score></gold> <muted>points this week</muted>"
+  weekly-winners: "<gold>✦</gold> <muted>The weekly trial leaderboard has reset! Winners:</muted> <light><winners></light>"
+  weekly-prize: "<gold>✦</gold> <muted>You placed</muted> <gold>#<place></gold> <muted>on last week's trial leaderboard - here is your prize!</muted>"
+  weekly-reset-done: "<success>Weekly leaderboard ended and prizes handed out.</success>"
 
   # Vaults
   vault-refreshed: "<gold>✦</gold> <muted>The vault recognises you again - claim your reward!</muted>"

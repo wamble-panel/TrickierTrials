@@ -8,6 +8,7 @@ import de.t14d3.trickiertrials.hook.TrialsExpansion;
 import de.t14d3.trickiertrials.mob.AffixListener;
 import de.t14d3.trickiertrials.session.SessionManager;
 import de.t14d3.trickiertrials.stats.StatsStore;
+import de.t14d3.trickiertrials.stats.WeeklyLeaderboard;
 import de.t14d3.trickiertrials.util.Fx;
 import de.t14d3.trickiertrials.util.RankBadge;
 import de.t14d3.trickiertrials.util.Text;
@@ -26,6 +27,7 @@ public final class TrickierTrials extends JavaPlugin {
     private AffixListener affixes;
     private ChamberProtectionListener protection;
     private GuardManager guards;
+    private WeeklyLeaderboard weekly;
 
     @Override
     public void onEnable() {
@@ -38,6 +40,7 @@ public final class TrickierTrials extends JavaPlugin {
         affixes = new AffixListener(this);
         protection = new ChamberProtectionListener(this);
         guards = new GuardManager(this);
+        weekly = new WeeklyLeaderboard(this);
 
         var pm = getServer().getPluginManager();
         pm.registerEvents(protection, this);
@@ -45,6 +48,8 @@ public final class TrickierTrials extends JavaPlugin {
         pm.registerEvents(affixes, this);
         pm.registerEvents(sessions, this);
         pm.registerEvents(guards, this);
+        pm.registerEvents(weekly, this);
+        weekly.start();
         sessions.startTicking();
         guards.startTicking();
 
@@ -67,6 +72,7 @@ public final class TrickierTrials extends JavaPlugin {
         if (guards != null) guards.shutdown();
         if (protection != null) protection.restoreAll();
         if (stats != null) stats.saveNow();
+        if (weekly != null) weekly.shutdown();
     }
 
     public void reload() {
@@ -185,6 +191,10 @@ public final class TrickierTrials extends JavaPlugin {
 
     public SessionManager sessions() {
         return sessions;
+    }
+
+    public WeeklyLeaderboard weekly() {
+        return weekly;
     }
 
     public GuardManager guards() {

@@ -1058,6 +1058,7 @@ public final class TrialSession implements BossHost {
         int reached = Math.max(1, wave);
         PlayerRun mvp = runs.values().stream().max(Comparator.comparingLong(r -> r.score)).orElse(null);
         for (PlayerRun run : runs.values()) {
+            plugin.weekly().record(run, victory);
             List<String> records = plugin.stats().record(run, reached, victory,
                     settings().progressionEnabled ? settings().rankRules() : null, rank, penalize);
             Player player = plugin.getServer().getPlayer(run.uuid);

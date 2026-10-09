@@ -131,6 +131,15 @@ public final class Settings {
     public final int treasureSeconds;
     public final List<Reward> blitzRewards;
 
+    // Weekly leaderboard
+    public final boolean weeklyEnabled;
+    public final boolean weeklyMetricBest;
+    public final String weeklyResetDay;
+    public final String weeklyResetTime;
+    public final String weeklyTimezone;
+    public final long weeklyMinScore;
+    public final String weeklyEmptySlot;
+
     // Chamber Warden
     public final boolean guardEnabled;
     public final String guardBoss;
@@ -265,6 +274,14 @@ public final class Settings {
         treasureSeconds = Math.max(10, c.getInt("wave-events.treasure-seconds", 35));
         blitzRewards = Reward.parse(c.getStringList("wave-events.blitz-rewards"), logger);
 
+        weeklyEnabled = c.getBoolean("weekly.enabled", true);
+        weeklyMetricBest = "best".equalsIgnoreCase(c.getString("weekly.metric", "total"));
+        weeklyResetDay = c.getString("weekly.reset-day", "MONDAY");
+        weeklyResetTime = c.getString("weekly.reset-time", "00:00");
+        weeklyTimezone = c.getString("weekly.timezone", "UTC");
+        weeklyMinScore = c.getLong("weekly.min-score", 1);
+        weeklyEmptySlot = c.getString("weekly.empty-slot", "-");
+
         guardEnabled = c.getBoolean("warden.enabled", true);
         guardBoss = c.getString("warden.boss", "juggernaut");
         guardName = c.getString("warden.name", "<gradient:copper:gold><bold>Chamber Warden</bold></gradient>");
@@ -344,6 +361,10 @@ public final class Settings {
 
     /** A loot entry in the form "MATERIAL amount chance". */
     public record Reward(Material material, int amount, double chance) {
+
+        public static List<Reward> parseLines(List<String> lines, Logger logger) {
+            return parse(lines, logger);
+        }
 
         static List<Reward> parse(List<String> lines, Logger logger) {
             List<Reward> rewards = new ArrayList<>();

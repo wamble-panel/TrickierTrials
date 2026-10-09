@@ -1,6 +1,7 @@
 package de.t14d3.trickiertrials.hook;
 
 import de.t14d3.trickiertrials.TrickierTrials;
+import de.t14d3.trickiertrials.stats.StatsStore;
 import de.t14d3.trickiertrials.util.RankBadge;
 import de.t14d3.trickiertrials.util.Text;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
@@ -51,6 +52,67 @@ public final class TrialsExpansion extends PlaceholderExpansion {
         return true;
     }
 
+    /**
+     * Leaderboard placeholders for holograms:
+     * weekly_name_N, weekly_score_N, weekly_wins_N, weekly_score, weekly_position, weekly_reset,
+     * lastweek_name_N, lastweek_score_N, top_CATEGORY_name_N, top_CATEGORY_value_N.
+     */
+    private String boardPlaceholder(OfflinePlayer player, String key) {
+        String empty = plugin.settings().weeklyEmptySlot;
+        var weekly = plugin.weekly();
+        switch (key) {
+            case "weekly_score" -> {
+                return Text.number(weekly.score(player.getUniqueId()));
+            }
+            case "weekly_position" -> {
+                int position = weekly.position(player.getUniqueId());
+                return position == 0 ? empty : String.valueOf(position);
+            }
+            case "weekly_reset" -> {
+                return Text.duration(weekly.millisUntilReset());
+            }
+            default -> {
+            }
+        }
+        String[] parts = key.split("_");
+        int place;
+        try {
+            place = Integer.parseInt(parts[parts.length - 1]);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        if (place < 1) return empty;
+        if (key.startsWith("weekly_")) {
+            var list = weekly.standings();
+            if (place > list.size()) return key.startsWith("weekly_name_") ? empty : "";
+            var entry = list.get(place - 1);
+            if (key.startsWith("weekly_name_")) return entry.name();
+            if (key.startsWith("weekly_score_")) return Text.number(entry.score());
+            if (key.startsWith("weekly_wins_")) return String.valueOf(entry.wins());
+            return null;
+        }
+        if (key.startsWith("lastweek_")) {
+            String field = key.startsWith("lastweek_name_") ? "name" : key.startsWith("lastweek_score_") ? "score" : null;
+            if (field == null) return null;
+            String value = weekly.lastWeek(place, field);
+            if (value == null) return field.equals("name") ? empty : "";
+            return field.equals("score") ? Text.number(Long.parseLong(value)) : value;
+        }
+        if (key.startsWith("top_") && parts.length == 4) {
+            StatsStore.Category category = StatsStore.Category.byName(parts[1]);
+            if (category == null) return null;
+            var list = plugin.stats().top(category, place);
+            if (place > list.size()) return parts[2].equals("name") ? empty : "";
+            var entry = list.get(place - 1);
+            if (parts[2].equals("name")) return entry.name();
+            if (parts[2].equals("value")) {
+                return category == StatsStore.Category.WAVE || category == StatsStore.Category.RANK
+                        ? Text.roman((int) entry.value()) : Text.number(entry.value());
+            }
+        }
+        return null;
+    }
+
     @Override
     public String onRequest(OfflinePlayer player, String params) {
         if (player == null) return "";
@@ -77,6 +139,8 @@ public final class TrialsExpansion extends PlaceholderExpansion {
             default -> {
             }
         }
+        String board = boardPlaceholder(player, key);
+        if (board != null) return board;
         if (key.equals("progress") || key.equals("progress_needed")) {
             if (rank >= plugin.settings().maxRank) return key.equals("progress") ? "MAX" : "";
             return key.equals("progress") ? String.valueOf(plugin.stats().rankProgress(player.getUniqueId()))
