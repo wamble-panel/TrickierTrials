@@ -140,7 +140,7 @@ placeholders are available for TAB, scoreboards, chat formats and menus:
 | Placeholder | Example | Description |
 |---|---|---|
 | `%trickiertrials_rank_stars%` | ★ (coloured) | Rank badge with colours |
-| `%trickiertrials_rank_stars_hex%` | `&#FFD700★` | Badge as written in the config, for plugins that read `&#RRGGBB` themselves |
+| `%trickiertrials_rank_stars_hex%` | `&#FFD700✯` | Badge as written in the config, for plugins that read `&#RRGGBB` themselves |
 | `%trickiertrials_rank%` | `7` | Rank number (0-20) |
 | `%trickiertrials_rank_tier%` | `Gold` | Tier name |
 | `%trickiertrials_rank_roman%` | `VII` | Rank in roman numerals |
@@ -149,7 +149,7 @@ placeholders are available for TAB, scoreboards, chat formats and menus:
 
 All `rank` placeholders are empty for players without a rank. Each rank shows a single symbol. The
 shape gives the tier and the brightness gives the step inside it (dim, normal, bright):
-Bronze ✧ (1-3), Silver ✦ (4-6), Gold ★ (7-9), Emerald ❖ (10-12), Diamond ◆ (13-15), Crystal ✵ (16-19,
+Bronze ✧ (1-3), Silver ✦ (4-6), Gold ✯ (7-9), Emerald ❖ (10-12), Diamond ◆ (13-15), Crystal ✵ (16-19,
 pure white at 19) and ✪ for max rank 20. Every badge and tier name can be changed under
 `rank-badges` and `rank-tiers` in `config.yml`.
 

@@ -536,7 +536,11 @@ public final class TrialSession implements BossHost {
         // Mobs that died, despawned or wandered off no longer hold the wave hostage.
         mobs.removeIf(uuid -> {
             Entity entity = plugin.getServer().getEntity(uuid);
-            return entity == null || entity.isDead() || !entity.isValid() || !area.contains(entity.getLocation().toVector());
+            if (entity == null || !entity.isValid()) {
+                manager.unindex(uuid); // despawned or unloaded without dying
+                return true;
+            }
+            return entity.isDead() || !area.contains(entity.getLocation().toVector());
         });
         boolean stalled = ticks - lastProgressTick > STALL_TICKS;
         if (!mobs.isEmpty() && !stalled) {
@@ -927,6 +931,7 @@ public final class TrialSession implements BossHost {
             world.spawnParticle(Particle.TRIAL_SPAWNER_DETECTION, entity.getLocation().add(0, 0.2, 0), 4, 0.3, 0.1, 0.3, 0);
             entity.remove();
         }
+        for (UUID uuid : mobs) manager.unindex(uuid);
         mobs.clear();
     }
 

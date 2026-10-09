@@ -87,6 +87,7 @@ public final class ChamberProtectionListener implements Listener {
     public void onBlockBreakProgress(BlockBreakProgressUpdateEvent event) {
         int level = settings().miningFatigueLevel;
         if (!settings().protectionEnabled || level <= 0) return;
+        if (!settings().protectedBlocks.contains(event.getBlock().getType())) return;
         if (!(event.getEntity() instanceof Player player)) return;
         if (!Chambers.inChamber(event.getBlock())) return;
         player.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, 10, level - 1, true, false, false));

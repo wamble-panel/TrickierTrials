@@ -7,7 +7,7 @@
 # Every palette colour below can be used as a tag (<copper>text</copper>) and inside
 # gradients (<gradient:copper:gold>text</gradient>).
 
-config-version: 4
+config-version: 5
 
 palette:
   copper: "#E8875B"   # warm copper - main accent
@@ -192,9 +192,9 @@ rank-badges:
   - "&#8F8F8F✦"         # 4  Silver
   - "&#C0C0C0✦"         # 5
   - "&#E6E6E6✦"         # 6
-  - "&#C9A800★"         # 7  Gold
-  - "&#FFD700★"         # 8
-  - "&#FFE866★"         # 9
+  - "&#C9A800✯"         # 7  Gold
+  - "&#FFD700✯"         # 8
+  - "&#FFE866✯"         # 9
   - "&#3A9A5C❖"         # 10 Emerald
   - "&#50C878❖"         # 11
   - "&#8AE6A8❖"         # 12

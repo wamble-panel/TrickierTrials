@@ -82,6 +82,7 @@ public final class TrickierTrials extends JavaPlugin {
         }
         boolean upgraded = upgradeToV3();
         upgraded |= upgradeToV4();
+        upgraded |= upgradeToV5();
         if (missing || upgraded) {
             getConfig().options().copyDefaults(true);
             saveConfig();
@@ -136,6 +137,24 @@ public final class TrickierTrials extends JavaPlugin {
             getLogger().info("Updated rank badges to the single-symbol design.");
         }
         c.set("config-version", 4);
+        return true;
+    }
+
+    /** v5 changed the Gold badge from ★ to ✯ (only where the v4 defaults are unchanged). */
+    private boolean upgradeToV5() {
+        var c = getConfig();
+        if (!c.isSet("config-version") || c.getInt("config-version") >= 5) return false;
+        List<String> badges = new java.util.ArrayList<>(c.getStringList("rank-badges"));
+        String[][] swaps = {{"&#C9A800★", "&#C9A800✯"}, {"&#FFD700★", "&#FFD700✯"}, {"&#FFE866★", "&#FFE866✯"}};
+        boolean changed = false;
+        for (int i = 7; i <= 9 && i < badges.size(); i++) {
+            if (badges.get(i).equals(swaps[i - 7][0])) {
+                badges.set(i, swaps[i - 7][1]);
+                changed = true;
+            }
+        }
+        if (changed) c.set("rank-badges", badges);
+        c.set("config-version", 5);
         return true;
     }
 

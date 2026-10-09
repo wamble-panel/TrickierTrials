@@ -89,6 +89,10 @@ public final class SessionManager implements Listener {
         mobIndex.put(entity.getUniqueId(), session);
     }
 
+    void unindex(UUID uuid) {
+        mobIndex.remove(uuid);
+    }
+
     public void end(TrialSession session, boolean victory) {
         end(session, victory, true);
     }
